@@ -11,11 +11,12 @@
   <style>
     .btn{border-radius:1rem;padding:.5rem .75rem;box-shadow:0 1px 2px rgba(0,0,0,.07)}
     .badge{display:inline-block;border-radius:9999px;padding:.125rem .5rem;font-size:.75rem;border:1px solid #e5e7eb}
-    .pill{display:inline-flex;align-items:center;gap:.35rem;border:1px solid #e5e7eb;border-radius:9999px;padding:.15rem .55rem;font-size:.75rem}
+    .qty{display:inline-flex;align-items:center;gap:.4rem;border:1px solid #e5e7eb;border-radius:9999px;padding:.2rem .55rem;background:#fff}
+    .qty button{width:1.6rem;height:1.6rem;border-radius:9999px;border:1px solid #e5e7eb;line-height:1.6rem;text-align:center}
   </style>
 </head>
 <body class="bg-slate-50 min-h-screen">
-  <!-- Festes Logo oben rechts (falls du eine externe URL willst, src ändern) -->
+  <!-- Festes Logo oben rechts -->
   <div class="fixed top-3 right-3 z-50 pointer-events-none select-none">
     <img src="assets/ILS_Logo.png" alt="Logo" class="h-16 w-auto drop-shadow" loading="eager" decoding="async" />
   </div>
@@ -73,10 +74,48 @@
       gross:  ["Industrie", "Landwirtschaft", "Halle"]
     };
 
-    /* ========= AAO-Erhöhung (Zusatzkräfte) ========= */
-    const AAO_ERHOEHUNG = [
-      "+1 (H)LF", "+1 TLF", "+1 DLK", "+1 ELW", "+1 RW",
-      "+1 RTW", "+1 NEF", "+1 NKTW", "+1 GW-G", "+1 GW-W"
+    /* ========= AAO-Erhöhung (mit Mengen, gruppiert) ========= */
+    const AAO_ERHOEHUNG_GROUPS = [
+      {
+        title: "Lösch-/Rüstfahrzeuge",
+        items: [
+          { key: "(H)LF", label: "(H)LF" },
+          { key: "TLF",  label: "TLF"  },
+          { key: "RW",   label: "RW"   },
+          { key: "DLK",  label: "DLK"  },
+        ]
+      },
+      {
+        title: "Führung BF/FF",
+        items: [
+          { key: "ELW 1", label: "ELW 1" },
+          { key: "ELW 2", label: "ELW 2" },
+          { key: "KdoW A-Dienst", label: "KdoW A-Dienst" },
+          { key: "KdoW B-Dienst", label: "KdoW B-Dienst" },
+          { key: "KdoW C-Dienst", label: "KdoW C-Dienst" },
+          { key: "UG-ÖEL", label: "UG-ÖEL" },
+        ]
+      },
+      {
+        title: "Rettungsdienst & Führung RD",
+        items: [
+          { key: "RTW",  label: "RTW"  },
+          { key: "NEF",  label: "NEF"  },
+          { key: "NKTW", label: "NKTW" },
+          { key: "ORGL", label: "ORGL (OrgL RD)" },
+          { key: "LNA",  label: "LNA (Leitender Notarzt)" },
+          { key: "ELRD", label: "ELRD" },
+          { key: "ÄLRD", label: "ÄLRD" },
+          { key: "UG-Rett", label: "UG-Rett" },
+        ]
+      },
+      {
+        title: "Wasser / Gefahrgut",
+        items: [
+          { key: "GW-G", label: "GW-G" },
+          { key: "GW-W", label: "GW-W" },
+        ]
+      }
     ];
 
     /* ========= Listen ========= */
@@ -133,19 +172,27 @@
       return null;
     }
 
-    function buildVehiclesWithIncrease(base, increaseList){
-      const inc = (increaseList && increaseList.length) ? " + " + increaseList.join(", ") : "";
+    /* ===== Erhöhung: Zähler -> Textliste ===== */
+    function increaseListFromCounts(counts){
+      return Object.entries(counts)
+        .filter(([,n]) => n > 0)
+        .map(([k,n]) => `+${n} ${k}`);
+    }
+    function buildVehiclesWithIncrease(base, counts){
+      const incList = increaseListFromCounts(counts);
+      const inc = incList.length ? " + " + incList.join(", ") : "";
       return (base || "(offen)") + inc;
     }
 
-    function buildMail(a, entry, increase){
+    function buildMail(a, entry, incCounts){
       const brandExtraLines = (a.category === "Brand")
         ? (BRAND_SUBS[a.fireSize] || []).map(x => `Brand-Zusatz – ${x}: ${a.brandExtras.includes(x) ? "Ja" : "Nein"}`)
         : [];
-      const increaseLines = (increase.length ? ["AAO-Erhöhung: " + increase.join(", ")] : []);
+      const incList = increaseListFromCounts(incCounts);
+      const increaseLines = (incList.length ? ["AAO-Erhöhung: " + incList.join(", ")] : []);
       const lines = [
         `Stichwort: ${entry ? entry.Stichwort : "(offen)"}`,
-        `AAO Fahrzeuge: ${buildVehiclesWithIncrease(entry?.Fahrzeuge_AAO, increase)}`,
+        `AAO Fahrzeuge: ${buildVehiclesWithIncrease(entry?.Fahrzeuge_AAO, incCounts)}`,
         `Info: ${(entry && entry.Info) ? entry.Info : "(keine)"}`,
         `—`,
         `Melder: ${a.callerName || "(unbekannt)"}`,
@@ -167,7 +214,7 @@
       return { subject, body, mailto };
     }
 
-    function buildAlarmText(a, entry, increase, maxLen = 160){
+    function buildAlarmText(a, entry, incCounts, maxLen = 160){
       const parts = [];
       if (a.category === "Brand") {
         const { code, text } = brandCodeAndText(a.fireSize, a.personsInDanger);
@@ -184,7 +231,8 @@
         if (a.unconscious !== "unbekannt") parts.push(`Bew:${a.unconscious}`);
         if (a.breathing !== "unbekannt") parts.push(`Atm:${a.breathing}`);
       }
-      if (increase.length) parts.push("E:" + increase.join(", "));
+      const incList = increaseListFromCounts(incCounts);
+      if (incList.length) parts.push("E: " + incList.join(", "));
       const det = (a.details || "").trim(); if (det) parts.push(det.slice(0,60));
       if (a.callbackNumber) parts.push(`RK:${a.callbackNumber}`);
       if (a.callerName) parts.push(`M:${a.callerName}`);
@@ -255,11 +303,16 @@
         callbackNumber: "",
         location: "",
       });
-      const [increase, setIncrease] = useState([]); // AAO-Erhöhung
+
+      // AAO-Erhöhung: counts = { "RTW": 2, "ELW 2": 1, ... }
+      const [incCounts, setIncCounts] = useState({});
+      const incPlus  = (k) => setIncCounts(s => ({...s, [k]: Math.max(0, (s[k]||0)+1)}));
+      const incMinus = (k) => setIncCounts(s => ({...s, [k]: Math.max(0, (s[k]||0)-1)}));
+      const incReset = () => setIncCounts({});
 
       const entry = useMemo(()=>pickAAO(a), [a]);
-      const mail  = useMemo(()=>buildMail(a, entry, increase), [a, entry, increase]);
-      const alarm = useMemo(()=>buildAlarmText(a, entry, increase), [a, entry, increase]);
+      const mail  = useMemo(()=>buildMail(a, entry, incCounts), [a, entry, incCounts]);
+      const alarm = useMemo(()=>buildAlarmText(a, entry, incCounts), [a, entry, incCounts]);
 
       // Kopieren
       const [copied, setCopied] = useState({stichwort:false, fahrzeuge:false, zusatz:false, alarm:false, mail:false});
@@ -276,9 +329,6 @@
         set.has(x) ? set.delete(x) : set.add(x);
         return {...s, brandExtras: [...set]};
       });
-
-      // AAO-Erhöhung
-      const toggleIncrease = (x) => setIncrease(list => list.includes(x) ? list.filter(i => i !== x) : [...list, x]);
 
       // Anzeige-Stichwort (Brand speziell)
       const displayStichwort = useMemo(() => {
@@ -351,21 +401,28 @@
                   </div>
                 )}
 
-                {/* AAO-Erhöhung */}
+                {/* AAO-Erhöhung (gruppiert) */}
                 <div className="mt-4">
-                  <div className="text-sm font-medium mb-1">AAO-Erhöhung (Zusatzkräfte)</div>
-                  <div className="flex flex-wrap gap-2">
-                    {AAO_ERHOEHUNG.map(x => (
-                      <button key={x} type="button"
-                        onClick={() => toggleIncrease(x)}
-                        className="pill"
-                        aria-pressed={increase.includes(x)}
-                        style={{background: increase.includes(x) ? "#eef2ff" : "white"}}
-                      >
-                        {increase.includes(x) ? "✓" : "+"} {x}
-                      </button>
-                    ))}
+                  <div className="text-sm font-medium mb-2 flex items-center justify-between">
+                    <span>AAO-Erhöhung (Zusatzkräfte)</span>
+                    <button type="button" className="btn text-xs" onClick={()=>incReset()}>Alles zurücksetzen</button>
                   </div>
+
+                  {AAO_ERHOEHUNG_GROUPS.map(group => (
+                    <div key={group.title} className="mb-3">
+                      <div className="text-xs font-semibold text-slate-600 mb-1">{group.title}</div>
+                      <div className="flex flex-wrap gap-2">
+                        {group.items.map(({key, label}) => (
+                          <div key={key} className="qty">
+                            <button type="button" onClick={()=>incMinus(key)} aria-label={`- ${label}`}>−</button>
+                            <span className="text-sm min-w-[1.5rem] text-center">{incCounts[key] || 0}</span>
+                            <button type="button" onClick={()=>incPlus(key)} aria-label={`+ ${label}`}>+</button>
+                            <span className="text-sm ml-1">{label}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
 
                 <LabeledTextArea label="Zusatzinfos (frei)" value={a.details} onChange={(v)=>setField("details", v)} rows={3} />
@@ -375,16 +432,25 @@
               <section className="lg:col-span-1 bg-white rounded-2xl shadow p-4">
                 <h2 className="font-semibold mb-3">Ergebnis</h2>
 
-                <Row label="Stichwort" value={displayStichwort}>
-                  <button className="btn text-xs" onClick={() => copy('stichwort', displayStichwort)}>
-                    {copied.stichwort ? "Kopiert ✔" : "Kopieren"}
-                  </button>
+                <Row label="Stichwort" value={( ()=>{
+                  if (a.category!=="Brand") return (entry?.Stichwort || "(nicht bestimmt)");
+                  const {code,text}=brandCodeAndText(a.fireSize,a.personsInDanger);
+                  const ex=a.brandExtras||[];
+                  return ex.length? `${code} ${ex.map(niceExtra).join(" / ")}` : (text?`${code} ${text}`:code);
+                })() }>
+                  <button className="btn text-xs" onClick={() => {
+                    const val=( ()=>{
+                      if (a.category!=="Brand") return (entry?.Stichwort || "");
+                      const {code,text}=brandCodeAndText(a.fireSize,a.personsInDanger);
+                      const ex=a.brandExtras||[];
+                      return ex.length? `${code} ${ex.map(niceExtra).join(" / ")}` : (text?`${code} ${text}`:code);
+                    })();
+                    navigator.clipboard.writeText(val);
+                  }}>{/* kein Status-Toast, kompakt halten */}Kopieren</button>
                 </Row>
 
-                <Row label="Fahrzeuge" value={buildVehiclesWithIncrease(entry?.Fahrzeuge_AAO, increase)}>
-                  <button className="btn text-xs" onClick={() => copy('fahrzeuge', buildVehiclesWithIncrease(entry?.Fahrzeuge_AAO, increase))}>
-                    {copied.fahrzeuge ? "Kopiert ✔" : "Kopieren"}
-                  </button>
+                <Row label="Fahrzeuge" value={buildVehiclesWithIncrease(entry?.Fahrzeuge_AAO, incCounts)}>
+                  <button className="btn text-xs" onClick={() => navigator.clipboard.writeText(buildVehiclesWithIncrease(entry?.Fahrzeuge_AAO, incCounts))}>Kopieren</button>
                 </Row>
 
                 <Row label="Info" value={(entry?.Info) || "(keine)"} multiline />
@@ -393,9 +459,7 @@
                   <div className="mt-3">
                     <div className="text-xs text-slate-500 flex items-center justify-between">
                       <span>Ausgewählte Brand-Zusätze</span>
-                      <button className="btn text-xs" onClick={() => copy('zusatz', (a.brandExtras||[]).join(", "))}>
-                        {copied.zusatz ? "Kopiert ✔" : "Kopieren"}
-                      </button>
+                      <button className="btn text-xs" onClick={() => navigator.clipboard.writeText((a.brandExtras||[]).join(", "))}>Kopieren</button>
                     </div>
                     <div className="mt-1 flex flex-wrap gap-1">
                       {(BRAND_SUBS[a.fireSize] || []).map(x => (
@@ -407,20 +471,20 @@
 
                 <div className="border-t my-3" />
                 <h3 className="font-medium mb-1 flex items-center justify-between">
-                  <span>Alarmtext (Melder) <span className="text-xs text-slate-500">({(alarm||"").length}/160)</span></span>
-                  <button className="btn text-xs" onClick={() => copy('alarm', alarm)}>{copied.alarm ? "Kopiert ✔" : "Kopieren"}</button>
+                  <span>Alarmtext (Melder)</span>
+                  <button className="btn text-xs" onClick={() => navigator.clipboard.writeText(alarm)}>Kopieren</button>
                 </h3>
-                <textarea className="w-full border rounded-xl p-2 text-sm" rows="4" readOnly value={alarm} />
+                <textarea className="w-full border rounded-2xl p-2 text-sm" rows="4" readOnly value={alarm} />
 
                 <div className="border-t my-3" />
                 <h3 className="font-medium mb-1 flex items-center justify-between">
                   <span>Mailer</span>
                   <div className="flex gap-2">
                     <a href={mail.mailto} className="btn bg-blue-600 text-white text-xs">In E-Mail öffnen</a>
-                    <button className="btn text-xs" onClick={() => copy('mail', mail.body)}>{copied.mail ? "Kopiert ✔" : "Kopieren"}</button>
+                    <button className="btn text-xs" onClick={() => navigator.clipboard.writeText(mail.body)}>Kopieren</button>
                   </div>
                 </h3>
-                <textarea className="w-full border rounded-xl p-2 text-sm" rows="10" readOnly value={mail.body} />
+                <textarea className="w-full border rounded-2xl p-2 text-sm" rows="10" readOnly value={mail.body} />
               </section>
             </div>
           </div>
