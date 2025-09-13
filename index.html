@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Notrufabfrage • AAO (mit Kopieren, ABC & Erhöhung)</title>
+  <title>Notrufabfrage • AAO</title>
   <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    .btn{border-radius:1rem;padding:.5rem .75rem;box-shadow:0 1px 2px rgba(0,0,0,.1);}
+    .btn{border-radius:1rem;padding:.5rem .75rem;box-shadow:0 1px 2px rgba(0,0,0,.07)}
     .badge{display:inline-block;border-radius:9999px;padding:.125rem .5rem;font-size:.75rem;border:1px solid #e5e7eb}
     .pill{display:inline-flex;align-items:center;gap:.35rem;border:1px solid #e5e7eb;border-radius:9999px;padding:.15rem .55rem;font-size:.75rem}
   </style>
@@ -18,9 +18,9 @@
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useMemo } = React;
+    const { useState, useMemo, useEffect } = React;
 
-    /* ===== AAO TABELLE ===== */
+    /* ========= AAO Tabelle ========= */
     const AAO = [
       // RD
       { Stichwort: "Krankentransport", Fahrzeuge_AAO: "NKTW oder RTW", Info: null },
@@ -31,7 +31,7 @@
       { Stichwort: "Reanimation", Fahrzeuge_AAO: "RTW, ggf. NEF", Info: "CPR/Herzstillstand" },
       { Stichwort: "Polytrauma", Fahrzeuge_AAO: "RTH & NEF & RTW", Info: "Schwerstverletzte" },
 
-      // Brand (Info ist generisch; Details kommen über Zusatzstichworte)
+      // Brand (Info generisch; Details über Zusatzstichworte)
       { Stichwort: "B - 1", Fahrzeuge_AAO: "TLF oder (H)LF", Info: "Brand klein" },
       { Stichwort: "B - 2", Fahrzeuge_AAO: "ELW, 2x (H)LF, DLK, TLF & RTW", Info: "Brand mittel" },
       { Stichwort: "B - 3", Fahrzeuge_AAO: "ELW, 3x (H)LF, DLK, 2x TLF & RTW", Info: "Brand groß" },
@@ -39,7 +39,7 @@
       { Stichwort: "B - 3Y", Fahrzeuge_AAO: "ELW, 3x (H)LF, DLK, 2x TLF & NEF, 3x RTW", Info: "2 P in Gefahr" },
       { Stichwort: "B - 4Y", Fahrzeuge_AAO: "ELW, 3x (H)LF, DLK, 2x TLF & 2x NEF, 4x RTW", Info: "3+ P in Gefahr" },
 
-      // TH
+      // TH (inkl. ABC)
       { Stichwort: "TH - 1", Fahrzeuge_AAO: "HLF", Info: "Technische Hilfe klein" },
       { Stichwort: "TH - 2", Fahrzeuge_AAO: "HLF, RW", Info: "Technische Hilfe mittel" },
       { Stichwort: "TH - 3", Fahrzeuge_AAO: "ELW, 2x HLF, RW, TLF", Info: "Technische Hilfe groß" },
@@ -49,7 +49,6 @@
       { Stichwort: "TH - Höhen/Tiefen", Fahrzeuge_AAO: "HLF, Rüstwagen, Höhenretter", Info: "Rettung aus Höhen/Tiefen" },
       { Stichwort: "TH - Gas 1", Fahrzeuge_AAO: "HLF", Info: "Gasgeruch" },
       { Stichwort: "TH - Gas 2", Fahrzeuge_AAO: "HLF, GW-G oder AB-G", Info: "Gasleitung beschädigt" },
-      /* NEU: ABC */
       { Stichwort: "TH - ABC 1", Fahrzeuge_AAO: "HLF, GW-G", Info: "Gefahrstoff klein" },
       { Stichwort: "TH - ABC 2", Fahrzeuge_AAO: "ELW, HLF, GW-G oder AB-G, RTW", Info: "Gefahrstoff mittel/groß" },
 
@@ -62,25 +61,25 @@
     ];
     const byKey = (k) => AAO.find(e => e.Stichwort.toLowerCase() === (k||'').toLowerCase()) || null;
 
-    /* ===== Brand-Zusätze (abhängig von Größe) ===== */
+    /* ========= Brand-Zusatz je Größe ========= */
     const BRAND_SUBS = {
       klein:  ["PKW", "Container", "Kamin", "Garage"],
       mittel: ["Wohnung", "Dachstuhl", "Keller", "LKW"],
       gross:  ["Industrie", "Landwirtschaft", "Halle"]
     };
 
-    /* ===== AAO-Erhöhung (Zusatzkräfte) ===== */
+    /* ========= AAO-Erhöhung (Zusatzkräfte) ========= */
     const AAO_ERHOEHUNG = [
       "+1 (H)LF", "+1 TLF", "+1 DLK", "+1 ELW", "+1 RW",
       "+1 RTW", "+1 NEF", "+1 NKTW", "+1 GW-G", "+1 GW-W"
     ];
 
-    /* ===== RD/TH Listen ===== */
-    const RD_SUBS = ["Notfall 1", "Hilflose Person", "Trauma", "Notfall 2", "Reanimation", "Polytrauma", "Krankentransport"];
+    /* ========= Listen ========= */
+    const RD_SUBS = ["Notfall 1","Hilflose Person","Trauma","Notfall 2","Reanimation","Polytrauma","Krankentransport"];
     const TH_LIST = AAO.filter(e => e.Stichwort.startsWith("TH")).map(e => e.Stichwort);
 
+    /* ========= Utils ========= */
     const num = (v)=> typeof v === "number" ? v : (v === "" ? 0 : Number(v));
-
     function brandCodeAndText(fireSize, persons){
       const p = num(persons);
       if (p >= 3) return { code: "B4Y", text: "" };
@@ -189,11 +188,11 @@
       return text;
     }
 
-    /* ===== kleine UI-Bausteine ===== */
-    const LabeledInput = ({label, value, onChange}) => (
+    /* ========= kleine UI-Bausteine ========= */
+    const LabeledInput = ({label, value, onChange, type="text"}) => (
       <label className="block mb-3">
         <span className="block text-sm font-medium mb-1">{label}</span>
-        <input className="w-full border rounded-xl p-2" value={value} onChange={(e)=>onChange(e.target.value)} />
+        <input type={type} className="w-full border rounded-xl p-2" value={value} onChange={(e)=>onChange(e.target.value)} />
       </label>
     );
     const NumberInput = ({label, value, onChange}) => (
@@ -235,8 +234,11 @@
       </div>
     );
 
-    /* ===== App ===== */
+    /* ========= App ========= */
     function App(){
+      // Standard-Logo aus dem Repo
+      const DEFAULT_LOGO = "assets/ILS_Logo.png";
+
       const [a, setA] = useState({
         category: "",
         personsInDanger: "",
@@ -253,11 +255,21 @@
       });
       const [increase, setIncrease] = useState([]); // AAO-Erhöhung
 
+      // Bild/Logo
+      const [img, setImg] = useState({ src: DEFAULT_LOGO, align: "left", width: 140 });
+      function onPickFile(e){
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => setImg(s => ({...s, src: reader.result}));
+        reader.readAsDataURL(file);
+      }
+
       const entry = useMemo(()=>pickAAO(a), [a]);
       const mail  = useMemo(()=>buildMail(a, entry, increase), [a, entry, increase]);
       const alarm = useMemo(()=>buildAlarmText(a, entry, increase), [a, entry, increase]);
 
-      // Kopieren (fix: echte onClick-Handler)
+      // Kopieren
       const [copied, setCopied] = useState({stichwort:false, fahrzeuge:false, zusatz:false, alarm:false, mail:false});
       const copy = async (key, text) => {
         try { await navigator.clipboard.writeText(text || ""); setCopied(s=>({...s,[key]:true})); setTimeout(()=>setCopied(s=>({...s,[key]:false})),1200); } catch {}
@@ -265,6 +277,7 @@
 
       const setField = (k, v) => setA(s => ({...s, [k]: v}));
 
+      // Brand-Zusätze
       const allowedExtras = BRAND_SUBS[a.fireSize] || [];
       const toggleExtra = (x) => setA(s => {
         const set = new Set(s.brandExtras.filter(e => allowedExtras.includes(e)));
@@ -272,25 +285,64 @@
         return {...s, brandExtras: [...set]};
       });
 
-      const toggleIncrease = (x) => setIncrease(list => {
-        const has = list.includes(x);
-        return has ? list.filter(i => i !== x) : [...list, x];
-      });
+      // AAO-Erhöhung
+      const toggleIncrease = (x) => setIncrease(list => list.includes(x) ? list.filter(i => i !== x) : [...list, x]);
+
+      // Anzeige-Stichwort (Brand speziell)
+      const displayStichwort = useMemo(() => {
+        if (a.category !== "Brand") return entry?.Stichwort || "(nicht bestimmt)";
+        const { code, text } = brandCodeAndText(a.fireSize, a.personsInDanger);
+        const ex = a.brandExtras || [];
+        return ex.length ? `${code} ${ex.map(niceExtra).join(" / ")}` : (text ? `${code} ${text}` : code);
+      }, [a, entry]);
 
       return (
         <div className="min-h-screen bg-slate-50 p-6">
           <div className="mx-auto max-w-6xl">
-            <h1 className="text-2xl font-bold tracking-tight">Notrufabfrage • AAO</h1>
+            {/* Kopf mit Logo */}
+            {img.src && (
+              <div className={{left:"text-left",center:"text-center",right:"text-right"}[img.align]}>
+                <img src={img.src} alt="Logo" style={{display:"inline-block", width: img.width+"px", height:"auto"}} />
+              </div>
+            )}
+            <h1 className="text-2xl font-bold tracking-tight mt-3">Notrufabfrage • AAO</h1>
 
             <div className="grid lg:grid-cols-3 gap-4 mt-6">
               {/* Eingabe */}
               <section className="lg:col-span-2 bg-white rounded-2xl shadow p-4">
                 <h2 className="font-semibold mb-3">Einsatzdaten</h2>
+
                 <div className="grid md:grid-cols-2 gap-2">
                   <LabeledInput label="Melder-Name" value={a.callerName} onChange={(v)=>setField("callerName", v)} />
                   <LabeledInput label="Rückrufnummer" value={a.callbackNumber} onChange={(v)=>setField("callbackNumber", v)} />
                 </div>
                 <LabeledInput label="Adresse/PLZ" value={a.location} onChange={(v)=>setField("location", v)} />
+
+                {/* Logo / Bild konfigurieren */}
+                <div className="mt-2 p-3 bg-slate-50 rounded-xl border">
+                  <div className="text-sm font-medium mb-2">Logo / Bild</div>
+                  <div className="grid md:grid-cols-3 gap-3">
+                    <LabeledInput label="Bild-URL (optional)" value={img.src.startsWith("data:")? "" : img.src} onChange={(v)=>setImg(s=>({...s, src: v}))} />
+                    <label className="block mb-3">
+                      <span className="block text-sm font-medium mb-1">Datei auswählen</span>
+                      <input type="file" accept="image/*" className="w-full border rounded-xl p-2" onChange={onPickFile} />
+                    </label>
+                    <label className="block mb-3">
+                      <span className="block text-sm font-medium mb-1">Ausrichtung</span>
+                      <select className="w-full border rounded-xl p-2 bg-white" value={img.align} onChange={(e)=>setImg(s=>({...s, align: e.target.value}))}>
+                        <option value="left">links</option>
+                        <option value="center">zentriert</option>
+                        <option value="right">rechts</option>
+                      </select>
+                    </label>
+                  </div>
+                  <label className="block mb-1 text-sm font-medium">Größe: {img.width}px</label>
+                  <input type="range" min="80" max="320" value={img.width} onChange={(e)=>setImg(s=>({...s, width: Number(e.target.value)}))} className="w-full" />
+                  <div className="mt-2 flex gap-2">
+                    <button type="button" className="btn text-sm" onClick={()=>setImg({src:"",align:"center",width:160})}>Bild entfernen</button>
+                    {img.src && <a className="btn text-sm bg-blue-600 text-white" href={img.src} download>Bild herunterladen</a>}
+                  </div>
+                </div>
 
                 <Select label="Kategorie" value={a.category} onChange={(v)=>setField("category", v)} options={["", "Rettungsdienst", "Brand", "Technische Hilfe", "MANV/Sonderlage"]} />
 
@@ -311,6 +363,7 @@
                       <NumberInput label="Personen in Gefahr" value={a.personsInDanger} onChange={(v)=>setField("personsInDanger", v)} />
                       <Select label="Brandgröße" value={a.fireSize} onChange={(v)=>setField("fireSize", v)} options={["", "klein", "mittel", "gross"]} />
                     </div>
+
                     <div className="mt-2">
                       <div className="text-sm font-medium mb-1">Zusatz-Stichworte</div>
                       {allowedExtras.length === 0 ? (
@@ -338,14 +391,12 @@
                   </div>
                 )}
 
-                {/* NEU: AAO-Erhöhung (für alle Lagen verfügbar) */}
+                {/* AAO-Erhöhung */}
                 <div className="mt-4">
                   <div className="text-sm font-medium mb-1">AAO-Erhöhung (Zusatzkräfte)</div>
                   <div className="flex flex-wrap gap-2">
                     {AAO_ERHOEHUNG.map(x => (
-                      <button
-                        key={x}
-                        type="button"
+                      <button key={x} type="button"
                         onClick={() => toggleIncrease(x)}
                         className="pill"
                         aria-pressed={increase.includes(x)}
@@ -360,12 +411,12 @@
                 <LabeledTextArea label="Zusatzinfos (frei)" value={a.details} onChange={(v)=>setField("details", v)} rows={3} />
               </section>
 
-              {/* Ergebnis + Kopier-Buttons */}
+              {/* Ergebnis */}
               <section className="lg:col-span-1 bg-white rounded-2xl shadow p-4">
                 <h2 className="font-semibold mb-3">Ergebnis</h2>
 
-                <Row label="Stichwort" value={entry?.Stichwort || "(nicht bestimmt)"}>
-                  <button className="btn text-xs" onClick={() => copy('stichwort', entry?.Stichwort || '')}>
+                <Row label="Stichwort" value={displayStichwort}>
+                  <button className="btn text-xs" onClick={() => copy('stichwort', displayStichwort)}>
                     {copied.stichwort ? "Kopiert ✔" : "Kopieren"}
                   </button>
                 </Row>
@@ -380,7 +431,12 @@
 
                 {a.category === "Brand" && (
                   <div className="mt-3">
-                    <div className="text-xs text-slate-500">Ausgewählte Brand-Zusätze</div>
+                    <div className="text-xs text-slate-500 flex items-center justify-between">
+                      <span>Ausgewählte Brand-Zusätze</span>
+                      <button className="btn text-xs" onClick={() => copy('zusatz', (a.brandExtras||[]).join(", "))}>
+                        {copied.zusatz ? "Kopiert ✔" : "Kopieren"}
+                      </button>
+                    </div>
                     <div className="mt-1 flex flex-wrap gap-1">
                       {(BRAND_SUBS[a.fireSize] || []).map(x => (
                         <span key={x} className="badge">{x}: {a.brandExtras.includes(x) ? "Ja" : "Nein"}</span>
@@ -417,12 +473,3 @@
   </script>
 </body>
 </html>
-// stabiles Standard-Logo aus dem Repo
-const DEFAULT_LOGO = "assets/ILS_Logo.png";
-
-const [img, setImg] = React.useState({
-  src: DEFAULT_LOGO,
-  align: "left",   // "left" | "center" | "right"
-  width: 140       // px
-});
-
