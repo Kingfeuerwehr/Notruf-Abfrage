@@ -296,4 +296,124 @@
 
                 {a.category === "Rettungsdienst" && (
                   <div className="grid md:grid-cols-2 gap-2">
-                    <Select label="RD-Unterstichwort"
+                    <Select label="RD-Unterstichwort" value={a.rdSub} onChange={(v)=>setField("rdSub", v)} options={["", ...RD_SUBS]} />
+                    <div className="grid grid-cols-2 gap-2">
+                      <Select label="Bewusstlos?" value={a.unconscious} onChange={(v)=>setField("unconscious", v)} options={["unbekannt","ja","nein"]} />
+                      <Select label="Atmung vorhanden?" value={a.breathing} onChange={(v)=>setField("breathing", v)} options={["unbekannt","ja","nein"]} />
+                    </div>
+                    <NumberInput label="Betroffene/Verletzte" value={a.personsInDanger} onChange={(v)=>setField("personsInDanger", v)} />
+                  </div>
+                )}
+
+                {a.category === "Brand" && (
+                  <div>
+                    <div className="grid md:grid-cols-2 gap-2">
+                      <NumberInput label="Personen in Gefahr" value={a.personsInDanger} onChange={(v)=>setField("personsInDanger", v)} />
+                      <Select label="Brandgröße" value={a.fireSize} onChange={(v)=>setField("fireSize", v)} options={["", "klein", "mittel", "gross"]} />
+                    </div>
+                    <div className="mt-2">
+                      <div className="text-sm font-medium mb-1">Zusatz-Stichworte</div>
+                      {allowedExtras.length === 0 ? (
+                        <div className="text-xs text-slate-500">Bitte zuerst die Brandgröße wählen.</div>
+                      ) : (
+                        allowedExtras.map(x => (
+                          <Checkbox key={x} label={x} checked={a.brandExtras.includes(x)} onChange={()=>toggleExtra(x)} />
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {a.category === "Technische Hilfe" && (
+                  <div className="grid md:grid-cols-2 gap-2">
+                    <Select label="TH-Stichwort" value={a.thType} onChange={(v)=>setField("thType", v)} options={["", ...TH_LIST]} />
+                    <NumberInput label="Betroffene (optional)" value={a.personsInDanger} onChange={(v)=>setField("personsInDanger", v)} />
+                  </div>
+                )}
+
+                {a.category === "MANV/Sonderlage" && (
+                  <div className="grid md:grid-cols-2 gap-2">
+                    <NumberInput label="Verletzte/Betroffene" value={a.personsInDanger} onChange={(v)=>setField("personsInDanger", v)} />
+                    <LabeledInput label="Schlüsselwörter (z. B. Amok/Terror)" value={a.details} onChange={(v)=>setField("details", v)} />
+                  </div>
+                )}
+
+                {/* NEU: AAO-Erhöhung (für alle Lagen verfügbar) */}
+                <div className="mt-4">
+                  <div className="text-sm font-medium mb-1">AAO-Erhöhung (Zusatzkräfte)</div>
+                  <div className="flex flex-wrap gap-2">
+                    {AAO_ERHOEHUNG.map(x => (
+                      <button
+                        key={x}
+                        type="button"
+                        onClick={() => toggleIncrease(x)}
+                        className="pill"
+                        aria-pressed={increase.includes(x)}
+                        style={{background: increase.includes(x) ? "#eef2ff" : "white"}}
+                      >
+                        {increase.includes(x) ? "✓" : "+"} {x}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <LabeledTextArea label="Zusatzinfos (frei)" value={a.details} onChange={(v)=>setField("details", v)} rows={3} />
+              </section>
+
+              {/* Ergebnis + Kopier-Buttons */}
+              <section className="lg:col-span-1 bg-white rounded-2xl shadow p-4">
+                <h2 className="font-semibold mb-3">Ergebnis</h2>
+
+                <Row label="Stichwort" value={entry?.Stichwort || "(nicht bestimmt)"}>
+                  <button className="btn text-xs" onClick={() => copy('stichwort', entry?.Stichwort || '')}>
+                    {copied.stichwort ? "Kopiert ✔" : "Kopieren"}
+                  </button>
+                </Row>
+
+                <Row label="Fahrzeuge" value={buildVehiclesWithIncrease(entry?.Fahrzeuge_AAO, increase)}>
+                  <button className="btn text-xs" onClick={() => copy('fahrzeuge', buildVehiclesWithIncrease(entry?.Fahrzeuge_AAO, increase))}>
+                    {copied.fahrzeuge ? "Kopiert ✔" : "Kopieren"}
+                  </button>
+                </Row>
+
+                <Row label="Info" value={(entry?.Info) || "(keine)"} multiline />
+
+                {a.category === "Brand" && (
+                  <div className="mt-3">
+                    <div className="text-xs text-slate-500">Ausgewählte Brand-Zusätze</div>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {(BRAND_SUBS[a.fireSize] || []).map(x => (
+                        <span key={x} className="badge">{x}: {a.brandExtras.includes(x) ? "Ja" : "Nein"}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="border-t my-3" />
+                <h3 className="font-medium mb-1 flex items-center justify-between">
+                  <span>Alarmtext (Melder) <span className="text-xs text-slate-500">({(alarm||"").length}/160)</span></span>
+                  <button className="btn text-xs" onClick={() => copy('alarm', alarm)}>{copied.alarm ? "Kopiert ✔" : "Kopieren"}</button>
+                </h3>
+                <textarea className="w-full border rounded-xl p-2 text-sm" rows="4" readOnly value={alarm} />
+
+                <div className="border-t my-3" />
+                <h3 className="font-medium mb-1 flex items-center justify-between">
+                  <span>Mailer</span>
+                  <div className="flex gap-2">
+                    <a href={mail.mailto} className="btn bg-blue-600 text-white text-xs">In E-Mail öffnen</a>
+                    <button className="btn text-xs" onClick={() => copy('mail', mail.body)}>{copied.mail ? "Kopiert ✔" : "Kopieren"}</button>
+                  </div>
+                </h3>
+                <textarea className="w-full border rounded-xl p-2 text-sm" rows="10" readOnly value={mail.body} />
+              </section>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
