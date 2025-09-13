@@ -15,10 +15,15 @@
   </style>
 </head>
 <body class="bg-slate-50 min-h-screen">
+  <!-- Festes Logo oben rechts (falls du eine externe URL willst, src ändern) -->
+  <div class="fixed top-3 right-3 z-50 pointer-events-none select-none">
+    <img src="assets/ILS_Logo.png" alt="Logo" class="h-16 w-auto drop-shadow" loading="eager" decoding="async" />
+  </div>
+
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useMemo, useEffect } = React;
+    const { useState, useMemo } = React;
 
     /* ========= AAO Tabelle ========= */
     const AAO = [
@@ -31,7 +36,7 @@
       { Stichwort: "Reanimation", Fahrzeuge_AAO: "RTW, ggf. NEF", Info: "CPR/Herzstillstand" },
       { Stichwort: "Polytrauma", Fahrzeuge_AAO: "RTH & NEF & RTW", Info: "Schwerstverletzte" },
 
-      // Brand (Info generisch; Details über Zusatzstichworte)
+      // Brand
       { Stichwort: "B - 1", Fahrzeuge_AAO: "TLF oder (H)LF", Info: "Brand klein" },
       { Stichwort: "B - 2", Fahrzeuge_AAO: "ELW, 2x (H)LF, DLK, TLF & RTW", Info: "Brand mittel" },
       { Stichwort: "B - 3", Fahrzeuge_AAO: "ELW, 3x (H)LF, DLK, 2x TLF & RTW", Info: "Brand groß" },
@@ -236,9 +241,6 @@
 
     /* ========= App ========= */
     function App(){
-      // Standard-Logo aus dem Repo
-      const DEFAULT_LOGO = "assets/ILS_Logo.png";
-
       const [a, setA] = useState({
         category: "",
         personsInDanger: "",
@@ -254,16 +256,6 @@
         location: "",
       });
       const [increase, setIncrease] = useState([]); // AAO-Erhöhung
-
-      // Bild/Logo
-      const [img, setImg] = useState({ src: DEFAULT_LOGO, align: "left", width: 140 });
-      function onPickFile(e){
-        const file = e.target.files?.[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = () => setImg(s => ({...s, src: reader.result}));
-        reader.readAsDataURL(file);
-      }
 
       const entry = useMemo(()=>pickAAO(a), [a]);
       const mail  = useMemo(()=>buildMail(a, entry, increase), [a, entry, increase]);
@@ -299,13 +291,7 @@
       return (
         <div className="min-h-screen bg-slate-50 p-6">
           <div className="mx-auto max-w-6xl">
-            {/* Kopf mit Logo */}
-            {img.src && (
-              <div className={{left:"text-left",center:"text-center",right:"text-right"}[img.align]}>
-                <img src={img.src} alt="Logo" style={{display:"inline-block", width: img.width+"px", height:"auto"}} />
-              </div>
-            )}
-            <h1 className="text-2xl font-bold tracking-tight mt-3">Notrufabfrage • AAO</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Notrufabfrage • AAO</h1>
 
             <div className="grid lg:grid-cols-3 gap-4 mt-6">
               {/* Eingabe */}
@@ -317,32 +303,6 @@
                   <LabeledInput label="Rückrufnummer" value={a.callbackNumber} onChange={(v)=>setField("callbackNumber", v)} />
                 </div>
                 <LabeledInput label="Adresse/PLZ" value={a.location} onChange={(v)=>setField("location", v)} />
-
-                {/* Logo / Bild konfigurieren */}
-                <div className="mt-2 p-3 bg-slate-50 rounded-xl border">
-                  <div className="text-sm font-medium mb-2">Logo / Bild</div>
-                  <div className="grid md:grid-cols-3 gap-3">
-                    <LabeledInput label="Bild-URL (optional)" value={img.src.startsWith("data:")? "" : img.src} onChange={(v)=>setImg(s=>({...s, src: v}))} />
-                    <label className="block mb-3">
-                      <span className="block text-sm font-medium mb-1">Datei auswählen</span>
-                      <input type="file" accept="image/*" className="w-full border rounded-xl p-2" onChange={onPickFile} />
-                    </label>
-                    <label className="block mb-3">
-                      <span className="block text-sm font-medium mb-1">Ausrichtung</span>
-                      <select className="w-full border rounded-xl p-2 bg-white" value={img.align} onChange={(e)=>setImg(s=>({...s, align: e.target.value}))}>
-                        <option value="left">links</option>
-                        <option value="center">zentriert</option>
-                        <option value="right">rechts</option>
-                      </select>
-                    </label>
-                  </div>
-                  <label className="block mb-1 text-sm font-medium">Größe: {img.width}px</label>
-                  <input type="range" min="80" max="320" value={img.width} onChange={(e)=>setImg(s=>({...s, width: Number(e.target.value)}))} className="w-full" />
-                  <div className="mt-2 flex gap-2">
-                    <button type="button" className="btn text-sm" onClick={()=>setImg({src:"",align:"center",width:160})}>Bild entfernen</button>
-                    {img.src && <a className="btn text-sm bg-blue-600 text-white" href={img.src} download>Bild herunterladen</a>}
-                  </div>
-                </div>
 
                 <Select label="Kategorie" value={a.category} onChange={(v)=>setField("category", v)} options={["", "Rettungsdienst", "Brand", "Technische Hilfe", "MANV/Sonderlage"]} />
 
