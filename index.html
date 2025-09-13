@@ -417,3 +417,12 @@
   </script>
 </body>
 </html>
+// stabiles Standard-Logo aus dem Repo
+const DEFAULT_LOGO = "assets/ILS_Logo.png";
+
+const [img, setImg] = React.useState({
+  src: DEFAULT_LOGO,
+  align: "left",   // "left" | "center" | "right"
+  width: 140       // px
+});
+
