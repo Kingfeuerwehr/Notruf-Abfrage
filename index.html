@@ -33,7 +33,7 @@
     .ds-item[aria-selected="true"]{background:#0f172a}
     .ds-item:hover,.ds-item.ds-active{background:#111827}
     .ds-help{font-size:.75rem;color:#fca5a5;margin-top:.25rem}
-    /* übersichtlichere Maske */
+    /* Layout */
     .subcard{background:#0b0b0b;border:1px solid #1f2937;border-radius:.75rem;padding:.75rem}
     .subhead{font-weight:600;margin-bottom:.5rem;display:flex;align-items:center;gap:.5rem}
     .hint-sm{font-size:.75rem;color:#94a3b8}
@@ -180,9 +180,7 @@
         `AAO Fahrzeuge: ${buildVehiclesWithIncrease(combineVehiclesMulti(entry?.Fahrzeuge_AAO, extras), incCounts)}`,
         `Info: ${(entry && entry.Info) ? entry.Info : "(keine)"} `,
         `—`,
-        `Melder: ${a.callerName || "(unbekannt)"}`,
-        `Rückruf: ${a.callbackNumber || "(unbekannt)"}`,
-        `Adresse/PLZ: ${a.location || "(unbekannt)"}`,
+        // (Ort/Rufnummer/Melder entfernt)
         `Details: ${a.details || "(keine)"}`,
         `Kategorie: ${a.category || "(unbekannt)"}`,
         `Personen in Gefahr/Verletzt: ${a.personsInDanger === "" ? "(unbekannt)" : a.personsInDanger}`,
@@ -207,8 +205,7 @@
     function validate(a){
       const errors=[];
       if(!a.category)errors.push({key:"category",msg:"Kategorie wählen.",block:true});
-      if(!a.location)errors.push({key:"location",msg:"Adresse/PLZ angeben.",block:true});
-      if(a.callbackNumber&&!/^[0-9+()\/\-\s]{6,}$/.test(a.callbackNumber))errors.push({key:"callbackNumber",msg:"Rückrufnummer wirkt ungültig (mind. 6 Ziffern/Zei.).",block:false});
+      // Ort/Rufnummer/Melder entfernt → keine Validierung mehr dafür
       if(a.personsInDanger!==""&&(isNaN(a.personsInDanger)||Number(a.personsInDanger)<0))errors.push({key:"personsInDanger",msg:"Anzahl Personen muss eine Zahl ≥ 0 sein.",block:true});
       switch(a.category){
         case"Brand":if(!a.fireSize)errors.push({key:"fireSize",msg:"Brandgröße auswählen (klein/mittel/gross).",block:true});break;
@@ -224,8 +221,7 @@
         if(!a.manvLevel)errors.push({key:"manvLevel",msg:"Bitte MANV-Level wählen (oder Automatik aktivieren).",block:true});
       }
       const map=Object.fromEntries(errors.map(e=>[e.key,e]));
-      const hasBlock=errors.some(e=>e.block);
-      return{errors,map,hasBlock};
+      return{errors,map};
     }
 
     /* === UI Mini-Bausteine === */
@@ -283,7 +279,7 @@
       const initialState={
         category:"",personsInDanger:"",unconscious:"unbekannt",breathing:"unbekannt",
         fireSize:"",brandExtras:[],thType:"",bmaType:"",abcType:"",thwType:"",rdSub:"",
-        details:"",callerName:"",callbackNumber:"",location:"",
+        details:"",
         // Sonderlagen
         manvActive:false,manvAuto:true,manvLevel:"",
         rdazActive:false,altlActive:false, cbrnActive:false, evacuationActive:false
@@ -309,7 +305,7 @@
       },[a.manvActive,a.manvAuto,a.manvLevel,a.personsInDanger]);
       const manvEntry=useMemo(()=>manvKey?byKey(manvKey):null,[manvKey]);
 
-      // Weitere Sonderlagen, die echte AAO haben (werden kombiniert)
+      // Weitere Sonderlagen mit AAO
       const extraEntries=useMemo(()=>{
         const list=[];
         if(a.rdazActive) { const e=byKey("RDAZ-1"); if(e) list.push(e); }
@@ -318,7 +314,7 @@
         return list;
       },[a.rdazActive,a.altlActive,manvEntry]);
 
-      // Info-Flags (nur Hinweis, keine AAO)
+      // Info-Flags (ohne AAO)
       const infoFlags=useMemo(()=>{
         const f=[];
         if(a.cbrnActive)f.push("CBRN-/Gefahrstoff-Lage");
@@ -354,8 +350,7 @@
         }
         // Sonderlagen mit Stichwort
         extraEntries.forEach(e=>parts.push(e.Stichwort));
-        // Ort, Personen, Details
-        if(a.location)parts.push(a.location);
+        // Personen / Details
         const p=num(a.personsInDanger);if(p>0)parts.push(`P:${p}`);
         if(a.category==="Technische Hilfe"&&a.thType)parts.push(`TH:${a.thType}`);
         if(a.category==="BMA"&&a.bmaType)parts.push(`BMA:${a.bmaType}`);
@@ -372,8 +367,6 @@
         const incList=increaseListFromCounts(incCounts);
         if(incList.length)parts.push("E: "+incList.join(", "));
         const det=(a.details||"").trim();if(det)parts.push(det.slice(0,60));
-        if(a.callbackNumber)parts.push(`RK:${a.callbackNumber}`);
-        if(a.callerName)parts.push(`M:${a.callerName}`);
         let textOut=parts.filter(Boolean).join(" | ").replace(/\s+/g," ").trim();
         if(textOut.length>160)textOut=textOut.slice(0,159)+"…";
         return textOut;
@@ -535,20 +528,6 @@
                 <div className="hint-sm mt-2">Hinweis: MANV, RDAZ-1 und AL/TL werden mit Stichwort und Fahrzeugen kombiniert. CBRN & Evakuierung sind Hinweis-Flags.</div>
               </details>
 
-              {/* Einsatzort & Melder */}
-              <Section title="Einsatzort & Melder" hint="Pflichtfelder rot markiert">
-                <div className="grid2">
-                  <LabeledInput label={<span className="req">Adresse/PLZ</span>} value={a.location} onChange={(v)=>setField("location",v)}
-                                invalid={!!map.location} help={map.location?.msg}/>
-                  <LabeledInput label="Rückrufnummer" value={a.callbackNumber} onChange={(v)=>setField("callbackNumber",v)}
-                                invalid={!!map.callbackNumber} help={map.callbackNumber?.msg}/>
-                </div>
-                <div className="grid2">
-                  <LabeledInput label="Melder-Name" value={a.callerName} onChange={(v)=>setField("callerName",v)}/>
-                  <LabeledInput label="Hinweise (optional)" value={a.details} onChange={(v)=>setField("details",v)}/>
-                </div>
-              </Section>
-
               {/* AAO-Erhöhung */}
               <Section title="AAO-Erhöhung (Zusatzkräfte)" hint="Optional – Zähler je Ressource">
                 <div className="hint-sm mb-2">„+“/„−“ klicken. Mit „Erhöhung zurücksetzen“ leerst du alle Zähler.</div>
@@ -590,11 +569,6 @@
                   Zusatzlage aktiv: {extraEntries.map(e=>e.Stichwort).join(" + ")} – in Stichwort, Fahrzeugen & Mail enthalten.
                 </div>
               )}
-              {infoFlags.length>0&&(
-                <div className="mt-2 text-xs text-slate-300">
-                  Hinweise: {infoFlags.join(", ")}
-                </div>
-              )}
 
               <div className="border-t border-slate-700 my-3"/>
               <h3 className="font-medium mb-1 flex items-center justify-between">
@@ -621,7 +595,7 @@
     const root=ReactDOM.createRoot(document.getElementById("root"));
     root.render(<App/>);
 
-    // Hilfsfunktion nach Definition (wegen Gebrauch in buildMail):
+    // Hilfsfunktion (wegen Gebrauch in buildMail)
     function buildVehiclesWithIncrease(base,counts){
       const incList=increaseListFromCounts(counts);
       const inc=incList.length?" + "+incList.join(", "):"";
