@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Notrufabfrage • AAO (Dark + Schwarzes Dropdown)</title>
+  <title>Notrufabfrage • AAO (Dark • übersichtliche Maske)</title>
 
   <!-- React + Babel + Tailwind -->
   <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
@@ -37,6 +37,18 @@
     .ds-item[aria-selected="true"] { background:#0f172a; }
     .ds-item:hover, .ds-item.ds-active { background:#111827; }
     .ds-help { font-size:.75rem; color:#fca5a5; margin-top:.25rem; }
+
+    /* —— übersichtlichere Maske (Unterkarten/Grids) —— */
+    .subcard{background:#0b0b0b;border:1px solid #1f2937;border-radius:.75rem;padding:.75rem}
+    .subhead{font-weight:600;margin-bottom:.5rem;display:flex;align-items:center;gap:.5rem}
+    .hint-sm{font-size:.75rem;color:#94a3b8}
+    .divider{height:1px;background:#1f2937;margin:.75rem 0}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+    .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.75rem}
+    @media (max-width: 1024px){
+      .grid2,.grid3{grid-template-columns:1fr}
+    }
+    .req::after{content:" *";color:#f87171;font-weight:700}
   </style>
 </head>
 <body class="min-h-screen">
@@ -167,7 +179,7 @@
       if (a.category === "BMA") return byKey(a.bmaType || "BMA");
       if (a.category === "Technische Hilfe") return byKey(a.thType);
       if (a.category === "ABC") return byKey(a.abcType);
-      if (a.category === "HW") return byKey(a.thwType);   // <- ehem. THW
+      if (a.category === "HW") return byKey(a.thwType);   // ehem. THW
       if (a.category === "Rettungsdienst") {
         if (a.rdSub && byKey(a.rdSub)) return byKey(a.rdSub);
         const d = (a.details||"").toLowerCase();
@@ -213,7 +225,7 @@
         `TH-Stichwort: ${a.thType || "(k.A.)"}`,
         `BMA-Typ: ${a.bmaType || "(k.A.)"}`,
         `ABC-Typ: ${a.abcType || "(k.A.)"}`,
-        `HW-Typ: ${a.thwType || "(k.A.)"}`,   // <- ehem. THW
+        `HW-Typ: ${a.thwType || "(k.A.)"}`,   // ehem. THW
         `RD-Unterstichwort: ${a.rdSub || "(k.A.)"}`,
         ...(brandExtraLines.length ? ["—", ...brandExtraLines] : []),
         ...(increaseLines.length ? ["—", ...increaseLines] : []),
@@ -266,14 +278,14 @@
 
     /* =================== UI-Bausteine =================== */
     const LabeledInput = ({label, value, onChange, type="text", invalid=false, help=""}) => (
-      <label className="block mb-3">
+      <label className="block">
         <span className="block text-sm font-medium mb-1">{label}</span>
         <input type={type} className={`w-full border rounded-xl p-2 ${invalid?'invalid':''}`} value={value} onChange={(e)=>onChange(e.target.value)} aria-invalid={invalid}/>
         {invalid && <div className="text-xs text-red-400 mt-1">{help || "Bitte prüfen."}</div>}
       </label>
     );
     const NumberInput = ({label, value, onChange, invalid=false, help=""}) => (
-      <label className="block mb-3">
+      <label className="block">
         <span className="block text-sm font-medium mb-1">{label}</span>
         <input type="number" min="0" className={`w-full border rounded-xl p-2 ${invalid?'invalid':''}`} value={value}
                onChange={(e)=>onChange(e.target.value===""?"":Number(e.target.value))} aria-invalid={invalid}/>
@@ -281,7 +293,7 @@
       </label>
     );
     const LabeledTextArea = ({label, value, onChange, rows=3, invalid=false, help=""}) => (
-      <label className="block mb-3">
+      <label className="block">
         <span className="block text-sm font-medium mb-1">{label}</span>
         <textarea className={`w-full border rounded-xl p-2 ${invalid?'invalid':''}`} rows={rows} value={value} onChange={(e)=>onChange(e.target.value)} aria-invalid={invalid}/>
         {invalid && <div className="text-xs text-red-400 mt-1">{help}</div>}
@@ -329,8 +341,20 @@
         }
       }
 
+      // Scroll-to-active
+      useEffect(() => {
+        if (!open || !menuRef.current) return;
+        const el = menuRef.current.querySelector(`.ds-item.ds-active`);
+        if (el) {
+          const m = menuRef.current;
+          const top = el.offsetTop, bottom = top + el.offsetHeight;
+          if (top < m.scrollTop) m.scrollTop = top;
+          else if (bottom > m.scrollTop + m.clientHeight) m.scrollTop = bottom - m.clientHeight;
+        }
+      }, [open, active]);
+
       return (
-        <label className="block mb-3">
+        <label className="block">
           <span className="block text-sm font-medium mb-1">{label}</span>
           <div className="ds-wrap">
             <button
@@ -347,7 +371,7 @@
             <span className="ds-caret">▾</span>
 
             {open && (
-              <div ref={menuRef} className="ds-menu" role="listbox" tabIndex={-1}>
+              <div ref={menuRef} className="ds-menu" role="listbox" tabIndex={-1} aria-label={typeof label === "string" ? label : "Auswahl"}>
                 {options.map((opt, i) => (
                   <div
                     key={opt + i}
@@ -367,6 +391,19 @@
         </label>
       );
     };
+
+    /* —— kleine Layout-Hilfe-Komponente —— */
+    function Section({title, hint, children}) {
+      return (
+        <div className="subcard mb-3">
+          <div className="subhead">
+            <span>{title}</span>
+            {hint && <span className="hint-sm">· {hint}</span>}
+          </div>
+          {children}
+        </div>
+      );
+    }
 
     const Row = ({label, value, multiline=false, children}) => (
       <div>
@@ -432,7 +469,7 @@
         if (a.category === "Technische Hilfe" && a.thType) parts.push(`TH:${a.thType}`);
         if (a.category === "BMA" && a.bmaType) parts.push(`BMA:${a.bmaType}`);
         if (a.category === "ABC" && a.abcType) parts.push(`ABC:${a.abcType}`);
-        if (a.category === "HW" && a.thwType) parts.push(`HW:${a.thwType}`);   // <- ehem. THW
+        if (a.category === "HW" && a.thwType) parts.push(`HW:${a.thwType}`);   // ehem. THW
         if (a.category === "Rettungsdienst") {
           if (a.rdSub) parts.push(`RD:${a.rdSub}`);
           if (a.unconscious !== "unbekannt") parts.push(`Bew:${a.unconscious}`);
@@ -458,7 +495,7 @@
             <div className="flex items-center justify-between">
               <h1 className="text-2xl font-bold tracking-tight">Notrufabfrage • AAO</h1>
               <div className="flex gap-2">
-                <button className="btn" onClick={resetAll}>Reset alles</button>
+                <button className="btn" onClick={resetAll}>Reset</button>
               </div>
             </div>
 
@@ -472,36 +509,47 @@
             )}
 
             <div className="grid lg:grid-cols-3 gap-4 mt-3">
-              {/* Eingabe */}
+              <!-- Eingabemaske, jetzt übersichtlicher in Sections -->
               <section className="lg:col-span-2 card p-4">
                 <h2 className="font-semibold mb-3">Einsatzdaten</h2>
 
-                <div className="grid md:grid-cols-2 gap-2">
-                  <LabeledInput label="Melder-Name" value={a.callerName} onChange={(v)=>setField("callerName", v)} />
-                  <LabeledInput label="Rückrufnummer" value={a.callbackNumber} onChange={(v)=>setField("callbackNumber", v)} invalid={!!map.callbackNumber} help={map.callbackNumber?.msg}/>
-                </div>
-                <LabeledInput label="Adresse/PLZ" value={a.location} onChange={(v)=>setField("location", v)} invalid={!!map.location} help={map.location?.msg}/>
+                {/* 1) Kategorie zuerst */}
+                <Section title="Kategorie wählen" hint="Bestimmt die weiteren Felder">
+                  <div className="grid2">
+                    <Select
+                      label={<span className="req">Kategorie</span>}
+                      value={a.category}
+                      onChange={(v)=>setField("category", v)}
+                      options={["", "Brand", "BMA", "Technische Hilfe", "ABC", "HW", "Rettungsdienst", "MANV/Sonderlage"]}
+                      invalid={!!map.category} help={map.category?.msg}
+                    />
+                    <LabeledInput
+                      label="Kurzlage (optional)"
+                      value={a.details}
+                      onChange={(v)=>setField("details", v)}
+                    />
+                  </div>
+                  <div className="hint-sm">Tipp: Erst Kategorie, dann Details – erspart spätere Änderungen.</div>
+                </Section>
 
-                <Select label="Kategorie" value={a.category} onChange={(v)=>setField("category", v)}
-                        options={["", "Brand", "BMA", "Technische Hilfe", "ABC", "HW", "Rettungsdienst", "MANV/Sonderlage"]}
-                        invalid={!!map.category} help={map.category?.msg}/>
-
-                {/* Brand */}
+                {/* 2) Lagespezifische Felder */}
                 {a.category === "Brand" && (
-                  <div>
-                    <div className="grid md:grid-cols-3 gap-2">
-                      <Select label="Brandgröße" value={a.fireSize} onChange={(v)=>setField("fireSize", v)} options={["", "klein", "mittel", "gross"]} invalid={!!map.fireSize} help={map.fireSize?.msg}/>
-                      <NumberInput label="Personen in Gefahr" value={a.personsInDanger} onChange={(v)=>setField("personsInDanger", v)} invalid={!!map.personsInDanger} help={map.personsInDanger?.msg}/>
-                      <LabeledInput label="Lage/Details (kurz)" value={a.details} onChange={(v)=>setField("details", v)} />
+                  <Section title="Brand" hint="Größe & Zusatzstichwörter">
+                    <div className="grid3">
+                      <Select label={<span className="req">Brandgröße</span>} value={a.fireSize} onChange={(v)=>setField("fireSize", v)}
+                              options={["", "klein", "mittel", "gross"]} invalid={!!map.fireSize} help={map.fireSize?.msg}/>
+                      <NumberInput label="Personen in Gefahr" value={a.personsInDanger}
+                                   onChange={(v)=>setField("personsInDanger", v)} invalid={!!map.personsInDanger} help={map.personsInDanger?.msg}/>
+                      <LabeledInput label="Objekt (z. B. Wohnung, Lagerhalle)" value={a.details} onChange={(v)=>setField("details", v)} />
                     </div>
-
-                    <div className="mt-2">
-                      <div className="text-sm font-medium mb-1">Zusatz-Stichworte</div>
-                      {(BRAND_SUBS[a.fireSize] || []).length === 0 ? (
-                        <div className="text-xs text-slate-400">Bitte zuerst die Brandgröße wählen.</div>
-                      ) : (
-                        (BRAND_SUBS[a.fireSize] || []).map(x => (
-                          <label key={x} className="inline-flex items-center gap-2 mr-3 mb-2">
+                    <div className="divider"></div>
+                    <div className="subhead">Zusatz-Stichworte</div>
+                    {(BRAND_SUBS[a.fireSize] || []).length === 0 ? (
+                      <div className="hint-sm">Bitte zuerst die Brandgröße wählen.</div>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {(BRAND_SUBS[a.fireSize] || []).map(x => (
+                          <label key={x} className="inline-flex items-center gap-2 mr-3">
                             <input type="checkbox" className="w-4 h-4"
                                    checked={a.brandExtras.includes(x)}
                                    onChange={()=>{
@@ -511,65 +559,94 @@
                                    }} />
                             <span className="text-sm">{x}</span>
                           </label>
-                        ))
-                      )}
-                    </div>
-                  </div>
+                        ))}
+                      </div>
+                    )}
+                  </Section>
                 )}
 
-                {/* BMA */}
                 {a.category === "BMA" && (
-                  <div className="grid md:grid-cols-3 gap-2">
-                    <Select label="BMA-Typ" value={a.bmaType} onChange={(v)=>setField("bmaType", v)} options={["", ...BMA_LIST]} invalid={!!map.bmaType} help={map.bmaType?.msg}/>
-                    <NumberInput label="Personen gefährdet (optional)" value={a.personsInDanger} onChange={(v)=>setField("personsInDanger", v)} invalid={!!map.personsInDanger} help={map.personsInDanger?.msg}/>
-                    <LabeledInput label="Objekt (z. B. Schule, Industrie…)" value={a.details} onChange={(v)=>setField("details", v)} />
-                  </div>
+                  <Section title="Brandmeldeanlage" hint="BMA-Typ & Objekt">
+                    <div className="grid3">
+                      <Select label={<span className="req">BMA-Typ</span>} value={a.bmaType} onChange={(v)=>setField("bmaType", v)}
+                              options={["", ...BMA_LIST]} invalid={!!map.bmaType} help={map.bmaType?.msg}/>
+                      <NumberInput label="Personen gefährdet (optional)" value={a.personsInDanger}
+                                   onChange={(v)=>setField("personsInDanger", v)} invalid={!!map.personsInDanger} help={map.personsInDanger?.msg}/>
+                      <LabeledInput label="Objekt (z. B. Schule, Industrie…)" value={a.details} onChange={(v)=>setField("details", v)} />
+                    </div>
+                  </Section>
                 )}
 
-                {/* TH */}
                 {a.category === "Technische Hilfe" && (
-                  <div className="grid md:grid-cols-3 gap-2">
-                    <Select label="TH-Stichwort" value={a.thType} onChange={(v)=>setField("thType", v)} options={["", ...TH_LIST]} invalid={!!map.thType} help={map.thType?.msg}/>
-                    <NumberInput label="Betroffene (optional)" value={a.personsInDanger} onChange={(v)=>setField("personsInDanger", v)} invalid={!!map.personsInDanger} help={map.personsInDanger?.msg}/>
-                    <LabeledInput label="Details" value={a.details} onChange={(v)=>setField("details", v)} />
-                  </div>
+                  <Section title="Technische Hilfe" hint="Stichwort & Details">
+                    <div className="grid3">
+                      <Select label={<span className="req">TH-Stichwort</span>} value={a.thType} onChange={(v)=>setField("thType", v)}
+                              options={["", ...TH_LIST]} invalid={!!map.thType} help={map.thType?.msg}/>
+                      <NumberInput label="Betroffene (optional)" value={a.personsInDanger}
+                                   onChange={(v)=>setField("personsInDanger", v)} invalid={!!map.personsInDanger} help={map.personsInDanger?.msg}/>
+                      <LabeledInput label="Details" value={a.details} onChange={(v)=>setField("details", v)} />
+                    </div>
+                  </Section>
                 )}
 
-                {/* ABC */}
                 {a.category === "ABC" && (
-                  <div className="grid md:grid-cols-3 gap-2">
-                    <Select label="ABC-Stichwort" value={a.abcType} onChange={(v)=>setField("abcType", v)} options={["", ...ABC_LIST]} invalid={!!map.abcType} help={map.abcType?.msg}/>
-                    <NumberInput label="Betroffene (optional)" value={a.personsInDanger} onChange={(v)=>setField("personsInDanger", v)} invalid={!!map.personsInDanger} help={map.personsInDanger?.msg}/>
-                    <LabeledInput label="Gefahrstoff/UN-Nr. (optional)" value={a.details} onChange={(v)=>setField("details", v)} />
-                  </div>
+                  <Section title="ABC" hint="Gefahrstoff & Maßnahmen">
+                    <div className="grid3">
+                      <Select label={<span className="req">ABC-Stichwort</span>} value={a.abcType} onChange={(v)=>setField("abcType", v)}
+                              options={["", ...ABC_LIST]} invalid={!!map.abcType} help={map.abcType?.msg}/>
+                      <NumberInput label="Betroffene (optional)" value={a.personsInDanger}
+                                   onChange={(v)=>setField("personsInDanger", v)} invalid={!!map.personsInDanger} help={map.personsInDanger?.msg}/>
+                      <LabeledInput label="Gefahrstoff/UN-Nr. (optional)" value={a.details} onChange={(v)=>setField("details", v)} />
+                    </div>
+                  </Section>
                 )}
 
-                {/* HW (ehem. THW) */}
                 {a.category === "HW" && (
-                  <div className="grid md:grid-cols-3 gap-2">
-                    <Select label="HW-Auftrag" value={a.thwType} onChange={(v)=>setField("thwType", v)} options={["", ...HW_LIST]} invalid={!!map.thwType} help={map.thwType?.msg}/>
-                    <NumberInput label="Betroffene (optional)" value={a.personsInDanger} onChange={(v)=>setField("personsInDanger", v)} invalid={!!map.personsInDanger} help={map.personsInDanger?.msg}/>
-                    <LabeledInput label="Lage/Objekt" value={a.details} onChange={(v)=>setField("details", v)} />
-                  </div>
+                  <Section title="HW (ehem. THW)" hint="Auftrag & Lage">
+                    <div className="grid3">
+                      <Select label={<span className="req">HW-Auftrag</span>} value={a.thwType} onChange={(v)=>setField("thwType", v)}
+                              options={["", ...HW_LIST]} invalid={!!map.thwType} help={map.thwType?.msg}/>
+                      <NumberInput label="Betroffene (optional)" value={a.personsInDanger}
+                                   onChange={(v)=>setField("personsInDanger", v)} invalid={!!map.personsInDanger} help={map.personsInDanger?.msg}/>
+                      <LabeledInput label="Lage/Objekt" value={a.details} onChange={(v)=>setField("details", v)} />
+                    </div>
+                  </Section>
                 )}
 
-                {/* RD */}
                 {a.category === "Rettungsdienst" && (
-                  <div className="grid md:grid-cols-3 gap-2">
-                    <Select label="RD-Unterstichwort" value={a.rdSub} onChange={(v)=>setField("rdSub", v)} options={["", ...RD_SUBS]} invalid={!!map.rdSub} help={map.rdSub?.msg}/>
-                    <Select label="Bewusstlos?" value={a.unconscious} onChange={(v)=>setField("unconscious", v)} options={["unbekannt","ja","nein"]} />
-                    <Select label="Atmung vorhanden?" value={a.breathing} onChange={(v)=>setField("breathing", v)} options={["unbekannt","ja","nein"]} />
-                    <NumberInput label="Betroffene/Verletzte" value={a.personsInDanger} onChange={(v)=>setField("personsInDanger", v)} invalid={!!map.personsInDanger} help={map.personsInDanger?.msg}/>
-                    <LabeledInput label="Details" value={a.details} onChange={(v)=>setField("details", v)} />
-                  </div>
+                  <Section title="Rettungsdienst" hint="Unterstichwort & Zustand">
+                    <div className="grid3">
+                      <Select label="RD-Unterstichwort" value={a.rdSub} onChange={(v)=>setField("rdSub", v)}
+                              options={["", ...RD_SUBS]} invalid={!!map.rdSub} help={map.rdSub?.msg}/>
+                      <Select label="Bewusstlos?" value={a.unconscious} onChange={(v)=>setField("unconscious", v)} options={["unbekannt","ja","nein"]} />
+                      <Select label="Atmung vorhanden?" value={a.breathing} onChange={(v)=>setField("breathing", v)} options={["unbekannt","ja","nein"]} />
+                    </div>
+                    <div className="grid2 mt-2">
+                      <NumberInput label="Betroffene/Verletzte" value={a.personsInDanger}
+                                   onChange={(v)=>setField("personsInDanger", v)} invalid={!!map.personsInDanger} help={map.personsInDanger?.msg}/>
+                      <LabeledInput label="Details" value={a.details} onChange={(v)=>setField("details", v)} />
+                    </div>
+                  </Section>
                 )}
 
-                {/* AAO-Erhöhung */}
-                <div className="mt-4">
-                  <div className="text-sm font-medium mb-2 flex items-center justify-between">
-                    <span>AAO-Erhöhung (Zusatzkräfte)</span>
-                    <button type="button" className="btn" onClick={()=>incReset()}>Erhöhung zurücksetzen</button>
+                {/* 3) Einsatzort & Melderdaten */}
+                <Section title="Einsatzort & Melder" hint="Pflichtfelder rot markiert">
+                  <div className="grid2">
+                    <LabeledInput label={<span className="req">Adresse/PLZ</span>} value={a.location} onChange={(v)=>setField("location", v)}
+                                  invalid={!!map.location} help={map.location?.msg}/>
+                    <LabeledInput label="Rückrufnummer" value={a.callbackNumber} onChange={(v)=>setField("callbackNumber", v)}
+                                  invalid={!!map.callbackNumber} help={map.callbackNumber?.msg}/>
                   </div>
+                  <div className="grid2">
+                    <LabeledInput label="Melder-Name" value={a.callerName} onChange={(v)=>setField("callerName", v)} />
+                    <LabeledInput label="Hinweise (optional)" value={a.details} onChange={(v)=>setField("details", v)} />
+                  </div>
+                </Section>
+
+                {/* 4) AAO-Erhöhung kompakt */}
+                <Section title="AAO-Erhöhung (Zusatzkräfte)" hint="Optional – Zähler je Ressource">
+                  <div className="hint-sm mb-2">Klicke „+“/„−“. Mit „Erhöhung zurücksetzen“ leerst du alle Zähler.</div>
+                  <div className="divider"></div>
                   {AAO_ERHOEHUNG_GROUPS.map(group => (
                     <div key={group.title} className="mb-3">
                       <div className="text-xs font-semibold text-slate-300 mb-1">{group.title}</div>
@@ -585,12 +662,13 @@
                       </div>
                     </div>
                   ))}
-                </div>
-
-                <LabeledTextArea label="Zusatzinfos (frei)" value={a.details} onChange={(v)=>setField("details", v)} rows={3} />
+                  <div className="mt-2">
+                    <button type="button" className="btn" onClick={()=>incReset()}>Erhöhung zurücksetzen</button>
+                  </div>
+                </Section>
               </section>
 
-              {/* Ergebnis */}
+              <!-- Ergebnis -->
               <section className="lg:col-span-1 card p-4">
                 <h2 className="font-semibold mb-3">Ergebnis</h2>
 
