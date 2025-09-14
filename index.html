@@ -1,33 +1,44 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="de" class="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Notrufabfrage • AAO • Voll + Validierung</title>
+  <title>Notrufabfrage • AAO • Black Screen</title>
   <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    // Tailwind im Dark-Mode per .dark-Klasse
+    tailwind.config = { darkMode: 'class' };
+  </script>
   <style>
     .btn{border-radius:1rem;padding:.5rem .75rem;box-shadow:0 1px 2px rgba(0,0,0,.07)}
-    .badge{display:inline-block;border-radius:9999px;padding:.125rem .5rem;font-size:.75rem;border:1px solid #e5e7eb}
-    .qty{display:inline-flex;align-items:center;gap:.4rem;border:1px solid #e5e7eb;border-radius:9999px;padding:.2rem .55rem;background:#fff}
-    .qty button{width:1.6rem;height:1.6rem;border-radius:9999px;border:1px solid #e5e7eb;line-height:1.6rem;text-align:center}
+    .badge{display:inline-block;border-radius:9999px;padding:.125rem .5rem;font-size:.75rem;border:1px solid #334155}
+    .qty{display:inline-flex;align-items:center;gap:.4rem;border:1px solid #334155;border-radius:9999px;padding:.2rem .55rem;background:transparent}
+    .qty button{width:1.6rem;height:1.6rem;border-radius:9999px;border:1px solid #334155;line-height:1.6rem;text-align:center}
     .invalid{border-color:#ef4444 !important; box-shadow:0 0 0 1px rgba(239,68,68,.25)}
+    /* App auf "ultra dark" */
+    body{background:#000;}
+    .card{background:#0a0a0a;border:1px solid #1f2937}
+    textarea, input, select{background:#0b0b0b;border-color:#334155;color:#e5e7eb}
+    .hint{font-size:.75rem;color:#94a3b8}
+    /* Black-Screen Overlay */
+    .blackout{position:fixed;inset:0;background:#000;z-index:9999}
   </style>
 </head>
-<body class="bg-slate-50 min-h-screen">
+<body class="bg-black min-h-screen text-slate-100">
   <!-- Festes Logo oben rechts -->
-  <div class="fixed top-3 right-3 z-50 pointer-events-none select-none">
-    <img src="assets/ILS_Logo.png" alt="Logo" class="h-16 w-auto drop-shadow" loading="eager" decoding="async" />
+  <div class="fixed top-3 right-3 z-40 pointer-events-none select-none">
+    <img src="assets/ILS_Logo.png" alt="Logo" class="h-14 w-auto drop-shadow brightness-110" loading="eager" decoding="async" />
   </div>
 
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useMemo } = React;
+    const { useState, useMemo, useEffect } = React;
 
-    /* ========== AAO & Stichworte (wie zuvor, leicht gekürzt für Platz) ========== */
+    /* =================== Daten: AAO & Stichworte =================== */
     const AAO = [
       // Brand
       { Stichwort: "B - 1", Fahrzeuge_AAO: "(H)LF oder TLF", Info: "Brand klein" },
@@ -110,7 +121,7 @@
     const BMA_LIST = ["BMA","BMA - Industrie","Heimrauchmelder","CO-Melder"];
     const THW_LIST = AAO.filter(e => e.Stichwort.startsWith("THW - ")).map(e => e.Stichwort);
 
-    /* ========== Utils & Validierung ========== */
+    /* =================== Utils & Validierung =================== */
     const num = (v)=> typeof v === "number" ? v : (v === "" ? 0 : Number(v));
     function brandCodeAndText(fireSize, persons){
       const p = num(persons);
@@ -128,7 +139,7 @@
       Industrie:"Industriebrand", Landwirtschaft:"Landwirtschaftsbrand", Halle:"Hallenbrand", Hochhaus:"Hochhausbrand"
     }[x] || x);
 
-    function pickAAO(a){
+    function byCategoryPick(a){
       if (a.category === "MANV/Sonderlage") {
         const v = num(a.personsInDanger);
         if (/(amok|terror|schusswaffe|explosion)/i.test(a.details||"")) return byKey("AL/TL");
@@ -165,9 +176,7 @@
     }
 
     function increaseListFromCounts(counts){
-      return Object.entries(counts)
-        .filter(([,n]) => n > 0)
-        .map(([k,n]) => `+${n} ${k}`);
+      return Object.entries(counts).filter(([,n]) => n > 0).map(([k,n]) => `+${n} ${k}`);
     }
     function buildVehiclesWithIncrease(base, counts){
       const incList = increaseListFromCounts(counts);
@@ -208,17 +217,13 @@
       return { subject, body, mailto };
     }
 
-    /* ======= VALIDIERUNG: Pflichtfelder & Checks ======= */
+    /* =================== Validierung =================== */
     function validate(a){
       const errors = [];
       if (!a.category) errors.push({key:"category", msg:"Kategorie wählen.", block:true});
       if (!a.location) errors.push({key:"location", msg:"Adresse/PLZ angeben.", block:true});
-
-      // optionale Rückrufnummer, aber grob prüfen, wenn eingetragen
       if (a.callbackNumber && !/^[0-9+()\/\-\s]{6,}$/.test(a.callbackNumber))
         errors.push({key:"callbackNumber", msg:"Rückrufnummer wirkt ungültig (mind. 6 Ziffern/Zei.).", block:false});
-
-      // Personen in Gefahr / Betroffene: falls eingetragen, muss Zahl ≥ 0 sein
       if (a.personsInDanger !== "" && (isNaN(a.personsInDanger) || Number(a.personsInDanger) < 0))
         errors.push({key:"personsInDanger", msg:"Anzahl Personen muss eine Zahl ≥ 0 sein.", block:true});
 
@@ -239,7 +244,6 @@
           if (!a.thwType) errors.push({key:"thwType", msg:"THW-Auftrag auswählen.", block:true});
           break;
         case "Rettungsdienst":
-          // RD-Unterstichwort empfohlen; alternativ Details/Automatik
           if (!a.rdSub && !(a.details && a.details.trim().length>2))
             errors.push({key:"rdSub", msg:"RD-Unterstichwort wählen oder Details angeben.", block:false});
           break;
@@ -248,18 +252,17 @@
             errors.push({key:"personsInDanger", msg:"Anzahl Verletzte/Betroffene angeben (>0).", block:true});
           break;
       }
-
       const map = Object.fromEntries(errors.map(e => [e.key, e]));
       const hasBlock = errors.some(e => e.block);
       return { errors, map, hasBlock };
     }
 
-    /* ========== kleine UI-Bausteine mit invalid/Help ========== */
+    /* =================== UI-Bausteine =================== */
     const LabeledInput = ({label, value, onChange, type="text", invalid=false, help=""}) => (
       <label className="block mb-3">
         <span className="block text-sm font-medium mb-1">{label}</span>
         <input type={type} className={`w-full border rounded-xl p-2 ${invalid?'invalid':''}`} value={value} onChange={(e)=>onChange(e.target.value)} aria-invalid={invalid}/>
-        {invalid && <div className="text-xs text-red-600 mt-1">{help || "Bitte prüfen."}</div>}
+        {invalid && <div className="text-xs text-red-400 mt-1">{help || "Bitte prüfen."}</div>}
       </label>
     );
     const NumberInput = ({label, value, onChange, invalid=false, help=""}) => (
@@ -267,23 +270,23 @@
         <span className="block text-sm font-medium mb-1">{label}</span>
         <input type="number" min="0" className={`w-full border rounded-xl p-2 ${invalid?'invalid':''}`} value={value}
                onChange={(e)=>onChange(e.target.value===""?"":Number(e.target.value))} aria-invalid={invalid}/>
-        {invalid && <div className="text-xs text-red-600 mt-1">{help || "Bitte Zahl eingeben."}</div>}
+        {invalid && <div className="text-xs text-red-400 mt-1">{help || "Bitte Zahl eingeben."}</div>}
       </label>
     );
     const LabeledTextArea = ({label, value, onChange, rows=3, invalid=false, help=""}) => (
       <label className="block mb-3">
         <span className="block text-sm font-medium mb-1">{label}</span>
         <textarea className={`w-full border rounded-xl p-2 ${invalid?'invalid':''}`} rows={rows} value={value} onChange={(e)=>onChange(e.target.value)} aria-invalid={invalid}/>
-        {invalid && <div className="text-xs text-red-600 mt-1">{help}</div>}
+        {invalid && <div className="text-xs text-red-400 mt-1">{help}</div>}
       </label>
     );
     const Select = ({label, value, options, onChange, invalid=false, help=""}) => (
       <label className="block mb-3">
         <span className="block text-sm font-medium mb-1">{label}</span>
-        <select className={`w-full border rounded-xl p-2 bg-white ${invalid?'invalid':''}`} value={value} onChange={(e)=>onChange(e.target.value)} aria-invalid={invalid}>
+        <select className={`w-full border rounded-xl p-2 bg-transparent ${invalid?'invalid':''}`} value={value} onChange={(e)=>onChange(e.target.value)} aria-invalid={invalid}>
           {options.map(o => <option key={o} value={o}>{o || "— auswählen —"}</option>)}
         </select>
-        {invalid && <div className="text-xs text-red-600 mt-1">{help}</div>}
+        {invalid && <div className="text-xs text-red-400 mt-1">{help}</div>}
       </label>
     );
     function Checkbox({label, checked, onChange}) {
@@ -296,7 +299,7 @@
     }
     const Row = ({label, value, multiline=false, children}) => (
       <div>
-        <div className="text-xs text-slate-500 flex items-center justify-between">
+        <div className="text-xs text-slate-400 flex items-center justify-between">
           <span>{label}</span>
           {children}
         </div>
@@ -304,7 +307,7 @@
       </div>
     );
 
-    /* ========== App ========== */
+    /* =================== App =================== */
     function App(){
       const initialState = {
         category: "",
@@ -325,6 +328,7 @@
       };
       const [a, setA] = useState(initialState);
 
+      // AAO-Erhöhung: counts = { "RTW": 2, "ELW 2": 1, ... }
       const [incCounts, setIncCounts] = useState({});
       const incPlus  = (k) => setIncCounts(s => ({...s, [k]: Math.max(0, (s[k]||0)+1)}));
       const incMinus = (k) => setIncCounts(s => ({...s, [k]: Math.max(0, (s[k]||0)-1)}));
@@ -333,7 +337,7 @@
       const setField = (k, v) => setA(s => ({...s, [k]: v}));
       const { errors, map, hasBlock } = useMemo(()=>validate(a), [a]);
 
-      const entry = useMemo(()=>pickAAO(a), [a]);
+      const entry = useMemo(()=>byCategoryPick(a), [a]);
       const mail  = useMemo(()=>buildMail(a, entry, incCounts), [a, entry, incCounts]);
 
       const displayStichwort = useMemo(() => {
@@ -344,7 +348,6 @@
       }, [a, entry]);
 
       const alarm = useMemo(()=>{
-        // gleicher Generator wie vorher, hier inline für Kürze
         const parts = [];
         if (a.category === "Brand") {
           const { code, text } = brandCodeAndText(a.fireSize, a.personsInDanger);
@@ -374,87 +377,82 @@
         return text;
       }, [a, entry, incCounts]);
 
-      // Aktionen, die bei blockierenden Fehlern stoppen:
-      const guard = (fn) => {
-        if (hasBlock) {
-          alert("Es fehlen Pflichtangaben. Bitte rot markierte Felder ausfüllen.");
-          window.scrollTo({top:0, behavior:"smooth"});
-          return;
-        }
-        fn();
-      };
-
-      const copyAll = () => guard(async ()=>{
-        const all = [
-          `Stichwort: ${displayStichwort}`,
-          `Fahrzeuge: ${buildVehiclesWithIncrease(entry?.Fahrzeuge_AAO, incCounts)}`,
-          `Alarmtext: ${alarm}`,
-          `—`,
-          mail.body
-        ].join("\n");
-        try { await navigator.clipboard.writeText(all); } catch {}
-      });
-
-      const openMail = () => guard(()=>{ window.location.href = mail.mailto; });
-
-      const allowedExtras = BRAND_SUBS[a.fireSize] || [];
-      const toggleExtra = (x) => setA(s => {
-        const set = new Set(s.brandExtras.filter(e => allowedExtras.includes(e)));
-        set.has(x) ? set.delete(x) : set.add(x);
-        return {...s, brandExtras: [...set]};
-      });
-
       const resetAll = () => { setA(initialState); incReset(); };
 
+      // Black Screen Overlay (standardmäßig AN)
+      const [blackout, setBlackout] = useState(() => {
+        const saved = localStorage.getItem("blackout");
+        return saved ? saved === "1" : true; // default: AN
+      });
+      useEffect(() => {
+        localStorage.setItem("blackout", blackout ? "1" : "0");
+      }, [blackout]);
+      useEffect(() => {
+        const onKey = (e) => { if (e.key === "Escape") setBlackout(false); };
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+      }, []);
+
+      // Kopier-Helpers
+      const copy = async (text) => { try { await navigator.clipboard.writeText(text || ""); } catch {} };
+
       return (
-        <div className="min-h-screen bg-slate-50 p-6">
-          <div className="mx-auto max-w-6xl">
+        <div className="min-h-screen p-6">
+          {/* Black Screen Overlay */}
+          {blackout && <div className="blackout" title="Esc zum Anzeigen / Button oben rechts"></div>}
+
+          <div className="mx-auto max-w-6xl relative z-10">
             <div className="flex items-center justify-between">
               <h1 className="text-2xl font-bold tracking-tight">Notrufabfrage • AAO</h1>
               <div className="flex gap-2">
+                <button className="btn" onClick={()=>setBlackout(b=>!b)}>{blackout ? "🖤 Black Screen (AN)" : "⬛ Black Screen (AUS)"}</button>
                 <button className="btn" onClick={resetAll}>Reset alles</button>
-                <button className={`btn ${hasBlock?'bg-slate-300 text-slate-600':'bg-blue-600 text-white'}`} onClick={copyAll}>Alles kopieren</button>
               </div>
             </div>
 
             {/* Fehler-Zusammenfassung */}
-            {errors.length>0 && (
-              <div className="mt-3 mb-2 p-3 rounded-xl border border-red-200 bg-red-50">
-                <div className="font-semibold text-red-700 mb-1">Bitte prüfen ({errors.length}):</div>
-                <ul className="list-disc pl-5 text-sm text-red-700">
-                  {errors.map((e,i)=><li key={i}>{e.msg}</li>)}
+            {validate(a).errors.length>0 && (
+              <div className="mt-3 mb-2 p-3 rounded-xl card">
+                <div className="font-semibold text-red-400 mb-1">Bitte prüfen ({validate(a).errors.length}):</div>
+                <ul className="list-disc pl-5 text-sm text-red-300">
+                  {validate(a).errors.map((e,i)=><li key={i}>{e.msg}</li>)}
                 </ul>
+                <div className="hint mt-1">Hinweis: „Alles kopieren“/„E-Mail öffnen“ empfehlen wir erst nach Korrektur.</div>
               </div>
             )}
 
             <div className="grid lg:grid-cols-3 gap-4 mt-3">
               {/* Eingabe */}
-              <section className="lg:col-span-2 bg-white rounded-2xl shadow p-4">
+              <section className="lg:col-span-2 rounded-2xl shadow p-4 card">
                 <h2 className="font-semibold mb-3">Einsatzdaten</h2>
 
                 <div className="grid md:grid-cols-2 gap-2">
                   <LabeledInput label="Melder-Name" value={a.callerName} onChange={(v)=>setField("callerName", v)} />
-                  <LabeledInput label="Rückrufnummer" value={a.callbackNumber} onChange={(v)=>setField("callbackNumber", v)} invalid={!!map.callbackNumber} help={map.callbackNumber?.msg}/>
+                  <LabeledInput label="Rückrufnummer" value={a.callbackNumber} onChange={(v)=>setField("callbackNumber", v)} invalid={!!validate(a).map?.callbackNumber} help={validate(a).map?.callbackNumber?.msg}/>
                 </div>
-                <LabeledInput label="Adresse/PLZ" value={a.location} onChange={(v)=>setField("location", v)} invalid={!!map.location} help={map.location?.msg}/>
+                <LabeledInput label="Adresse/PLZ" value={a.location} onChange={(v)=>setField("location", v)} invalid={!!validate(a).map?.location} help={validate(a).map?.location?.msg}/>
 
-                <Select label="Kategorie" value={a.category} onChange={(v)=>setField("category", v)} options={["", "Brand", "BMA", "Technische Hilfe", "ABC", "THW", "Rettungsdienst", "MANV/Sonderlage"]} invalid={!!map.category} help={map.category?.msg}/>
+                <Select label="Kategorie" value={a.category} onChange={(v)=>setField("category", v)} options={["", "Brand", "BMA", "Technische Hilfe", "ABC", "THW", "Rettungsdienst", "MANV/Sonderlage"]} invalid={!!validate(a).map?.category} help={validate(a).map?.category?.msg}/>
 
                 {/* Brand */}
                 {a.category === "Brand" && (
                   <div>
                     <div className="grid md:grid-cols-3 gap-2">
-                      <Select label="Brandgröße" value={a.fireSize} onChange={(v)=>setField("fireSize", v)} options={["", "klein", "mittel", "gross"]} invalid={!!map.fireSize} help={map.fireSize?.msg}/>
-                      <NumberInput label="Personen in Gefahr" value={a.personsInDanger} onChange={(v)=>setField("personsInDanger", v)} invalid={!!map.personsInDanger} help={map.personsInDanger?.msg}/>
+                      <Select label="Brandgröße" value={a.fireSize} onChange={(v)=>setField("fireSize", v)} options={["", "klein", "mittel", "gross"]} invalid={!!validate(a).map?.fireSize} help={validate(a).map?.fireSize?.msg}/>
+                      <NumberInput label="Personen in Gefahr" value={a.personsInDanger} onChange={(v)=>setField("personsInDanger", v)} invalid={!!validate(a).map?.personsInDanger} help={validate(a).map?.personsInDanger?.msg}/>
                       <LabeledInput label="Lage/Details (kurz)" value={a.details} onChange={(v)=>setField("details", v)} />
                     </div>
                     <div className="mt-2">
                       <div className="text-sm font-medium mb-1">Zusatz-Stichworte</div>
-                      {allowedExtras.length === 0 ? (
-                        <div className="text-xs text-slate-500">Bitte zuerst die Brandgröße wählen.</div>
+                      {(BRAND_SUBS[a.fireSize] || []).length === 0 ? (
+                        <div className="text-xs text-slate-400">Bitte zuerst die Brandgröße wählen.</div>
                       ) : (
-                        allowedExtras.map(x => (
-                          <Checkbox key={x} label={x} checked={a.brandExtras.includes(x)} onChange={()=>toggleExtra(x)} />
+                        (BRAND_SUBS[a.fireSize] || []).map(x => (
+                          <Checkbox key={x} label={x} checked={a.brandExtras.includes(x)} onChange={(ch)=>{
+                            const set = new Set(a.brandExtras.filter(e => (BRAND_SUBS[a.fireSize]||[]).includes(e)));
+                            set.has(x) ? set.delete(x) : set.add(x);
+                            setField("brandExtras", [...set]);
+                          }} />
                         ))
                       )}
                     </div>
@@ -464,8 +462,8 @@
                 {/* BMA */}
                 {a.category === "BMA" && (
                   <div className="grid md:grid-cols-3 gap-2">
-                    <Select label="BMA-Typ" value={a.bmaType} onChange={(v)=>setField("bmaType", v)} options={["", ...BMA_LIST]} invalid={!!map.bmaType} help={map.bmaType?.msg}/>
-                    <NumberInput label="Personen gefährdet (optional)" value={a.personsInDanger} onChange={(v)=>setField("personsInDanger", v)} invalid={!!map.personsInDanger} help={map.personsInDanger?.msg}/>
+                    <Select label="BMA-Typ" value={a.bmaType} onChange={(v)=>setField("bmaType", v)} options={["", ...BMA_LIST]} invalid={!!validate(a).map?.bmaType} help={validate(a).map?.bmaType?.msg}/>
+                    <NumberInput label="Personen gefährdet (optional)" value={a.personsInDanger} onChange={(v)=>setField("personsInDanger", v)} invalid={!!validate(a).map?.personsInDanger} help={validate(a).map?.personsInDanger?.msg}/>
                     <LabeledInput label="Objekt (z. B. Schule, Industrie…)" value={a.details} onChange={(v)=>setField("details", v)} />
                   </div>
                 )}
@@ -473,8 +471,8 @@
                 {/* TH */}
                 {a.category === "Technische Hilfe" && (
                   <div className="grid md:grid-cols-3 gap-2">
-                    <Select label="TH-Stichwort" value={a.thType} onChange={(v)=>setField("thType", v)} options={["", ...TH_LIST]} invalid={!!map.thType} help={map.thType?.msg}/>
-                    <NumberInput label="Betroffene (optional)" value={a.personsInDanger} onChange={(v)=>setField("personsInDanger", v)} invalid={!!map.personsInDanger} help={map.personsInDanger?.msg}/>
+                    <Select label="TH-Stichwort" value={a.thType} onChange={(v)=>setField("thType", v)} options={["", ...TH_LIST]} invalid={!!validate(a).map?.thType} help={validate(a).map?.thType?.msg}/>
+                    <NumberInput label="Betroffene (optional)" value={a.personsInDanger} onChange={(v)=>setField("personsInDanger", v)} invalid={!!validate(a).map?.personsInDanger} help={validate(a).map?.personsInDanger?.msg}/>
                     <LabeledInput label="Details" value={a.details} onChange={(v)=>setField("details", v)} />
                   </div>
                 )}
@@ -482,8 +480,8 @@
                 {/* ABC */}
                 {a.category === "ABC" && (
                   <div className="grid md:grid-cols-3 gap-2">
-                    <Select label="ABC-Stichwort" value={a.abcType} onChange={(v)=>setField("abcType", v)} options={["", ...ABC_LIST]} invalid={!!map.abcType} help={map.abcType?.msg}/>
-                    <NumberInput label="Betroffene (optional)" value={a.personsInDanger} onChange={(v)=>setField("personsInDanger", v)} invalid={!!map.personsInDanger} help={map.personsInDanger?.msg}/>
+                    <Select label="ABC-Stichwort" value={a.abcType} onChange={(v)=>setField("abcType", v)} options={["", ...ABC_LIST]} invalid={!!validate(a).map?.abcType} help={validate(a).map?.abcType?.msg}/>
+                    <NumberInput label="Betroffene (optional)" value={a.personsInDanger} onChange={(v)=>setField("personsInDanger", v)} invalid={!!validate(a).map?.personsInDanger} help={validate(a).map?.personsInDanger?.msg}/>
                     <LabeledInput label="Gefahrstoff/UN-Nr. (optional)" value={a.details} onChange={(v)=>setField("details", v)} />
                   </div>
                 )}
@@ -491,8 +489,8 @@
                 {/* THW */}
                 {a.category === "THW" && (
                   <div className="grid md:grid-cols-3 gap-2">
-                    <Select label="THW-Auftrag" value={a.thwType} onChange={(v)=>setField("thwType", v)} options={["", ...THW_LIST]} invalid={!!map.thwType} help={map.thwType?.msg}/>
-                    <NumberInput label="Betroffene (optional)" value={a.personsInDanger} onChange={(v)=>setField("personsInDanger", v)} invalid={!!map.personsInDanger} help={map.personsInDanger?.msg}/>
+                    <Select label="THW-Auftrag" value={a.thwType} onChange={(v)=>setField("thwType", v)} options={["", ...THW_LIST]} invalid={!!validate(a).map?.thwType} help={validate(a).map?.thwType?.msg}/>
+                    <NumberInput label="Betroffene (optional)" value={a.personsInDanger} onChange={(v)=>setField("personsInDanger", v)} invalid={!!validate(a).map?.personsInDanger} help={validate(a).map?.personsInDanger?.msg}/>
                     <LabeledInput label="Lage/Objekt" value={a.details} onChange={(v)=>setField("details", v)} />
                   </div>
                 )}
@@ -500,32 +498,23 @@
                 {/* RD */}
                 {a.category === "Rettungsdienst" && (
                   <div className="grid md:grid-cols-3 gap-2">
-                    <Select label="RD-Unterstichwort" value={a.rdSub} onChange={(v)=>setField("rdSub", v)} options={["", ...RD_SUBS]} invalid={!!map.rdSub} help={map.rdSub?.msg}/>
+                    <Select label="RD-Unterstichwort" value={a.rdSub} onChange={(v)=>setField("rdSub", v)} options={["", ...RD_SUBS]} invalid={!!validate(a).map?.rdSub} help={validate(a).map?.rdSub?.msg}/>
                     <Select label="Bewusstlos?" value={a.unconscious} onChange={(v)=>setField("unconscious", v)} options={["unbekannt","ja","nein"]} />
                     <Select label="Atmung vorhanden?" value={a.breathing} onChange={(v)=>setField("breathing", v)} options={["unbekannt","ja","nein"]} />
-                    <NumberInput label="Betroffene/Verletzte" value={a.personsInDanger} onChange={(v)=>setField("personsInDanger", v)} invalid={!!map.personsInDanger} help={map.personsInDanger?.msg}/>
+                    <NumberInput label="Betroffene/Verletzte" value={a.personsInDanger} onChange={(v)=>setField("personsInDanger", v)} invalid={!!validate(a).map?.personsInDanger} help={validate(a).map?.personsInDanger?.msg}/>
                     <LabeledInput label="Details" value={a.details} onChange={(v)=>setField("details", v)} />
                   </div>
                 )}
 
-                {/* MANV/Sonderlage */}
-                {a.category === "MANV/Sonderlage" && (
-                  <div className="grid md:grid-cols-3 gap-2">
-                    <NumberInput label="Verletzte/Betroffene" value={a.personsInDanger} onChange={(v)=>setField("personsInDanger", v)} invalid={!!map.personsInDanger} help={map.personsInDanger?.msg}/>
-                    <LabeledInput label="Schlüsselwörter (Amok/Terror…)" value={a.details} onChange={(v)=>setField("details", v)} />
-                    <LabeledInput label="Besonderheiten" value={a.locationExtra || ""} onChange={(v)=>setField("locationExtra", v)} />
-                  </div>
-                )}
-
-                {/* AAO-Erhöhung (gruppiert) */}
+                {/* AAO-Erhöhung */}
                 <div className="mt-4">
                   <div className="text-sm font-medium mb-2 flex items-center justify-between">
                     <span>AAO-Erhöhung (Zusatzkräfte)</span>
-                    <button type="button" className="btn text-xs" onClick={()=>incReset()}>Erhöhung zurücksetzen</button>
+                    <button type="button" className="btn" onClick={()=>incReset()}>Erhöhung zurücksetzen</button>
                   </div>
                   {AAO_ERHOEHUNG_GROUPS.map(group => (
                     <div key={group.title} className="mb-3">
-                      <div className="text-xs font-semibold text-slate-600 mb-1">{group.title}</div>
+                      <div className="text-xs font-semibold text-slate-300 mb-1">{group.title}</div>
                       <div className="flex flex-wrap gap-2">
                         {group.items.map(({key, label}) => (
                           <div key={key} className="qty">
@@ -544,24 +533,24 @@
               </section>
 
               {/* Ergebnis */}
-              <section className="lg:col-span-1 bg-white rounded-2xl shadow p-4">
+              <section className="lg:col-span-1 rounded-2xl shadow p-4 card">
                 <h2 className="font-semibold mb-3">Ergebnis</h2>
 
                 <Row label="Stichwort" value={displayStichwort}>
-                  <button className="btn text-xs" onClick={() => navigator.clipboard.writeText(displayStichwort)}>Kopieren</button>
+                  <button className="btn text-xs" onClick={() => copy(displayStichwort)}>Kopieren</button>
                 </Row>
 
                 <Row label="Fahrzeuge" value={buildVehiclesWithIncrease(entry?.Fahrzeuge_AAO, incCounts)}>
-                  <button className="btn text-xs" onClick={() => navigator.clipboard.writeText(buildVehiclesWithIncrease(entry?.Fahrzeuge_AAO, incCounts))}>Kopieren</button>
+                  <button className="btn text-xs" onClick={() => copy(buildVehiclesWithIncrease(entry?.Fahrzeuge_AAO, incCounts))}>Kopieren</button>
                 </Row>
 
                 <Row label="Info" value={(entry?.Info) || "(keine)"} multiline />
 
                 {a.category === "Brand" && (
                   <div className="mt-3">
-                    <div className="text-xs text-slate-500 flex items-center justify-between">
+                    <div className="text-xs text-slate-400 flex items-center justify-between">
                       <span>Ausgewählte Brand-Zusätze</span>
-                      <button className="btn text-xs" onClick={() => navigator.clipboard.writeText((a.brandExtras||[]).join(", "))}>Kopieren</button>
+                      <button className="btn text-xs" onClick={() => copy((a.brandExtras||[]).join(", "))}>Kopieren</button>
                     </div>
                     <div className="mt-1 flex flex-wrap gap-1">
                       {(BRAND_SUBS[a.fireSize] || []).map(x => (
@@ -571,25 +560,22 @@
                   </div>
                 )}
 
-                <div className="border-t my-3" />
+                <div className="border-t border-slate-700 my-3" />
                 <h3 className="font-medium mb-1 flex items-center justify-between">
-                  <span>Alarmtext (Melder) <span className="text-xs text-slate-500">({(alarm||"").length}/160)</span></span>
-                  <button className="btn text-xs" onClick={() => navigator.clipboard.writeText(alarm)}>Kopieren</button>
+                  <span>Alarmtext (Melder) <span className="text-xs text-slate-400">({(alarm||"").length}/160)</span></span>
+                  <button className="btn text-xs" onClick={() => copy(alarm)}>Kopieren</button>
                 </h3>
-                <textarea className="w-full border rounded-2xl p-2 text-sm" rows="4" readOnly value={alarm} />
+                <textarea className="w-full rounded-2xl p-2 text-sm" rows="4" readOnly value={alarm} />
 
-                <div className="border-t my-3" />
+                <div className="border-t border-slate-700 my-3" />
                 <h3 className="font-medium mb-1 flex items-center justify-between">
                   <span>Mailer</span>
                   <div className="flex gap-2">
-                    <button className={`btn text-xs ${hasBlock?'bg-slate-300 text-slate-600':'bg-blue-600 text-white'}`} onClick={openMail}>In E-Mail öffnen</button>
-                    <button className="btn text-xs" onClick={() => navigator.clipboard.writeText(mail.body)}>Kopieren</button>
+                    <a href={buildMail(a, entry, incCounts).mailto} className="btn bg-blue-600 text-white text-xs">In E-Mail öffnen</a>
+                    <button className="btn text-xs" onClick={() => copy(buildMail(a, entry, incCounts).body)}>Kopieren</button>
                   </div>
                 </h3>
-                <textarea className="w-full border rounded-2xl p-2 text-sm" rows="10" readOnly value={mail.body} />
-
-                <div className="border-t my-3" />
-                <button className={`btn w-full ${hasBlock?'bg-slate-300 text-slate-600':''}`} onClick={copyAll}>Alles kopieren</button>
+                <textarea className="w-full rounded-2xl p-2 text-sm" rows="10" readOnly value={buildMail(a, entry, incCounts).body} />
               </section>
             </div>
           </div>
@@ -602,3 +588,4 @@
   </script>
 </body>
 </html>
+
