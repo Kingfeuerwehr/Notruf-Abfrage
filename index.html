@@ -3,52 +3,85 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Notrufabfrage • AAO (Dark, RD-Skalierung & MANV)</title>
+  <title>Notrufabfrage • AAO (Debug • RD-Skalierung & MANV)</title>
 
-  <!-- React + Babel + Tailwind -->
-  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>tailwind.config = { darkMode: 'class' };</script>
-
+  <!-- Minimaler Boot-Hinweis -->
   <style>
     :root{color-scheme:dark}
-    body{background:#000;color:#e5e7eb}
-    .card{background:#0a0a0a;border:1px solid #1f2937;border-radius:1rem}
-    .btn{border-radius:1rem;padding:.5rem .75rem;box-shadow:0 1px 2px rgba(0,0,0,.07);background:#111827;border:1px solid #334155}
-    .btn:hover{background:#0f172a}
-    .qty{display:inline-flex;align-items:center;gap:.4rem;border:1px solid #334155;border-radius:9999px;padding:.2rem .55rem;background:transparent}
-    .qty button{width:1.6rem;height:1.6rem;border-radius:9999px;border:1px solid #334155;line-height:1.6rem;text-align:center}
-    .invalid{border-color:#ef4444!important;box-shadow:0 0 0 1px rgba(239,68,68,.25)}
-    textarea,input{background:#0b0b0b;border-color:#334155;color:#e5e7eb}
-
-    /* Schwarzes Custom-Select */
-    .ds-wrap{position:relative}
-    .ds-btn{width:100%;border:1px solid #334155;border-radius:.75rem;padding:.5rem .75rem;background:#0b0b0b;color:#e5e7eb;text-align:left}
-    .ds-btn.invalid{box-shadow:0 0 0 1px rgba(239,68,68,.25);border-color:#ef4444}
-    .ds-caret{position:absolute;right:.6rem;top:50%;transform:translateY(-50%);opacity:.7;pointer-events:none}
-    .ds-menu{position:absolute;left:0;right:0;top:calc(100% + .25rem);background:#0a0a0a;border:1px solid #334155;border-radius:.75rem;max-height:16rem;overflow:auto;z-index:60;box-shadow:0 10px 30px rgba(0,0,0,.45)}
-    .ds-item{padding:.5rem .75rem;cursor:pointer;color:#e5e7eb}
-    .ds-item[aria-selected="true"]{background:#0f172a}
-    .ds-item:hover,.ds-item.ds-active{background:#111827}
-
-    .subcard{background:#0b0b0b;border:1px solid #1f2937;border-radius:.75rem;padding:.75rem}
-    .subhead{font-weight:600;margin-bottom:.5rem;display:flex;align-items:center;gap:.5rem}
-    .hint-sm{font-size:.75rem;color:#94a3b8}
-    .divider{height:1px;background:#1f2937;margin:.75rem 0}
-    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
-    .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.75rem}
-    @media (max-width:1024px){.grid2,.grid3{grid-template-columns:1fr}}
-    .req::after{content:" *";color:#f87171;font-weight:700}
+    body{margin:0;background:#000;color:#e5e7eb;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Inter,"Helvetica Neue",Arial}
+    .boot{padding:12px;color:#9ca3af}
+    .errbox{white-space:pre-wrap;background:#1f2937;color:#fecaca;border:1px solid #ef4444;padding:12px;border-radius:12px;margin:12px}
   </style>
 </head>
-<body class="min-h-screen">
-  <noscript style="color:#fff">Bitte JavaScript aktivieren.</noscript>
+<body>
+  <div id="boot-msg" class="boot">Lade App…</div>
   <div id="root"></div>
 
+  <!-- Fehler-Overlay: zeigt Fehler statt schwarzem Screen -->
+  <script>
+    (function(){
+      function show(t, m){
+        var box=document.createElement('div');
+        box.className='errbox';
+        box.textContent=t+"\n\n"+m;
+        document.body.appendChild(box);
+      }
+      window.addEventListener('error',  e=> show('JavaScript-Fehler', (e.message||'')+"\n"+(e.error&&e.error.stack||'')));
+      window.addEventListener('unhandledrejection', e=> show('Promise-Fehler', (e.reason&&e.reason.stack)||String(e.reason)));
+    })();
+  </script>
+
+  <!-- React + Babel + Tailwind (alle via HTTPS) -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { darkMode: 'class' };
+  </script>
+
+  <!-- Haupt-App (Babel transpiliert diese Datei) -->
   <script type="text/babel" data-presets="env,react">
-    const {useState,useMemo,useEffect}=React;
+    // Sicherheitscheck: React/Babel verfügbar?
+    if(!(window.React && window.ReactDOM && window.Babel)){
+      const rootEl = document.getElementById('root');
+      rootEl.innerHTML = '<div class="errbox">Fehler: React oder Babel wurde nicht geladen. Prüfe Internet/Content-Security-Policy.</div>';
+      throw new Error('React/Babel not loaded');
+    }
+
+    const {useState,useMemo,useEffect} = React;
+
+    /* ===== Styles ergänzen (Dark + Custom-Select) ===== */
+    const style = document.createElement('style');
+    style.textContent = `
+      .card{background:#0a0a0a;border:1px solid #1f2937;border-radius:1rem}
+      .btn{border-radius:1rem;padding:.5rem .75rem;box-shadow:0 1px 2px rgba(0,0,0,.07);background:#111827;border:1px solid #334155}
+      .btn:hover{background:#0f172a}
+      .qty{display:inline-flex;align-items:center;gap:.4rem;border:1px solid #334155;border-radius:9999px;padding:.2rem .55rem;background:transparent}
+      .qty button{width:1.6rem;height:1.6rem;border-radius:9999px;border:1px solid #334155;line-height:1.6rem;text-align:center}
+      .invalid{border-color:#ef4444!important;box-shadow:0 0 0 1px rgba(239,68,68,.25)}
+      textarea,input{background:#0b0b0b;border-color:#334155;color:#e5e7eb}
+
+      /* Schwarzes Custom-Select */
+      .ds-wrap{position:relative}
+      .ds-btn{width:100%;border:1px solid #334155;border-radius:.75rem;padding:.5rem .75rem;background:#0b0b0b;color:#e5e7eb;text-align:left}
+      .ds-btn.invalid{box-shadow:0 0 0 1px rgba(239,68,68,.25);border-color:#ef4444}
+      .ds-caret{position:absolute;right:.6rem;top:50%;transform:translateY(-50%);opacity:.7;pointer-events:none}
+      .ds-menu{position:absolute;left:0;right:0;top:calc(100% + .25rem);background:#0a0a0a;border:1px solid #334155;border-radius:.75rem;max-height:16rem;overflow:auto;z-index:60;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+      .ds-item{padding:.5rem .75rem;cursor:pointer;color:#e5e7eb}
+      .ds-item[aria-selected="true"]{background:#0f172a}
+      .ds-item:hover,.ds-item.ds-active{background:#111827}
+
+      .subcard{background:#0b0b0b;border:1px solid #1f2937;border-radius:.75rem;padding:.75rem}
+      .subhead{font-weight:600;margin-bottom:.5rem;display:flex;align-items:center;gap:.5rem}
+      .hint-sm{font-size:.75rem;color:#94a3b8}
+      .divider{height:1px;background:#1f2937;margin:.75rem 0}
+      .grid2{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+      .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.75rem}
+      @media (max-width:1024px){.grid2,.grid3{grid-template-columns:1fr}}
+      .req::after{content:" *";color:#f87171;font-weight:700}
+    `;
+    document.head.appendChild(style);
 
     /* ====== AAO-Daten ====== */
     const AAO=[
@@ -60,51 +93,44 @@
       {Stichwort:"B - 2Y",Fahrzeuge_AAO:"ELW 1, 2x (H)LF, DLK, TLF & NEF, 2x RTW",Info:"Brand mittel, P in Gefahr"},
       {Stichwort:"B - 3Y",Fahrzeuge_AAO:"ELW 1, 3x (H)LF, DLK, 2x TLF & NEF, 3x RTW",Info:"Brand groß, 2 P in Gefahr"},
       {Stichwort:"B - 4Y",Fahrzeuge_AAO:"ELW 2, 4x (H)LF, DLK, 3x TLF & 2x NEF, 4x RTW",Info:"Brand sehr groß, 3+ P"},
-
-      // BMA / RWM / CO
+      // BMA/CO
       {Stichwort:"BMA",Fahrzeuge_AAO:"ELW 1, (H)LF, DLK (bei Bedarf)",Info:"Brandmeldeanlage"},
       {Stichwort:"BMA - Industrie",Fahrzeuge_AAO:"ELW 1, 2x (H)LF, DLK, TLF",Info:"BMA in Industrie"},
-      {Stichwort:"Heimrauchmelder",Fahrzeuge_AAO:"(H)LF, DLK (örtlich)",Info:"ausgelöster Heimrauchmelder"},
-      {Stichwort:"CO-Melder",Fahrzeuge_AAO:"(H)LF, GW-Mess / Messen 1",Info:"CO-Alarm/Warner"},
-
-      // Technische Hilfe
+      {Stichwort:"Heimrauchmelder",Fahrzeuge_AAO:"(H)LF, DLK (örtlich)",Info:"RWM ausgelöst"},
+      {Stichwort:"CO-Melder",Fahrzeuge_AAO:"(H)LF, GW-Mess / Messen 1",Info:"CO-Alarm"},
+      // TH
       {Stichwort:"TH - 1",Fahrzeuge_AAO:"HLF",Info:"TH klein"},
       {Stichwort:"TH - 2",Fahrzeuge_AAO:"HLF, RW",Info:"TH mittel"},
       {Stichwort:"TH - 3",Fahrzeuge_AAO:"ELW 1, 2x HLF, RW, TLF",Info:"TH groß"},
       {Stichwort:"TH - VU",Fahrzeuge_AAO:"HLF, RW, RTW",Info:"Verkehrsunfall"},
-      {Stichwort:"TH - P-klemmt",Fahrzeuge_AAO:"ELW 1, HLF, RW, TLF & NEF, 2x RTW",Info:"VU P eingeklemmt"},
+      {Stichwort:"TH - P-klemmt",Fahrzeuge_AAO:"ELW 1, HLF, RW, TLF & NEF, 2x RTW",Info:"VU eingeklemmt"},
       {Stichwort:"TH - Wasser",Fahrzeuge_AAO:"HLF, Boot, GW-W",Info:"Wasser"},
       {Stichwort:"TH - Höhen/Tiefen",Fahrzeuge_AAO:"HLF, RW, Höhenretter",Info:"SRHT"},
       {Stichwort:"TH - Gas 1",Fahrzeuge_AAO:"HLF",Info:"Gasgeruch"},
-      {Stichwort:"TH - Gas 2",Fahrzeuge_AAO:"HLF, GW-G/AB-G",Info:"Gasleitung beschädigt"},
-
-      // ABC / Messen / Dekon
+      {Stichwort:"TH - Gas 2",Fahrzeuge_AAO:"HLF, GW-G/AB-G",Info:"Gasleitung defekt"},
+      // ABC
       {Stichwort:"ABC - 1",Fahrzeuge_AAO:"HLF, GW-G",Info:"Gefahrstoff klein"},
       {Stichwort:"ABC - 2",Fahrzeuge_AAO:"ELW 1, HLF, GW-G/AB-G, RTW",Info:"Gefahrstoff mittel"},
       {Stichwort:"ABC - 3",Fahrzeuge_AAO:"ELW 2, 2x HLF, GW-G/AB-G, Dekon-P, Messen 2, RTW",Info:"Gefahrstoff groß"},
-      {Stichwort:"Messen 1",Fahrzeuge_AAO:"GW-Mess / KdoW (Messung)",Info:"Messtrupp klein"},
+      {Stichwort:"Messen 1",Fahrzeuge_AAO:"GW-Mess / KdoW",Info:"Messtrupp klein"},
       {Stichwort:"Messen 2",Fahrzeuge_AAO:"GW-Mess, ELW 1",Info:"Messtrupp erweitert"},
-      {Stichwort:"Dekon-P",Fahrzeuge_AAO:"Dekon-P, HLF",Info:"Dekontamination Personen"},
-
-      // HW (vormals THW)
-      {Stichwort:"HW - Beleuchtung",Fahrzeuge_AAO:"HW: MzKW/GKW, Anh. Licht",Info:"Einsatzbeleuchtung"},
-      {Stichwort:"HW - Pumpen",Fahrzeuge_AAO:"HW: MzKW/GKW, Hochwasserpumpe",Info:"Wasser fördern"},
+      {Stichwort:"Dekon-P",Fahrzeuge_AAO:"Dekon-P, HLF",Info:"Dekontamination"},
+      // HW
+      {Stichwort:"HW - Beleuchtung",Fahrzeuge_AAO:"HW: MzKW/GKW, Anh. Licht",Info:"Beleuchtung"},
+      {Stichwort:"HW - Pumpen",Fahrzeuge_AAO:"HW: MzKW/GKW, Hochwasserpumpe",Info:"Pumpen"},
       {Stichwort:"HW - Räumen",Fahrzeuge_AAO:"HW: Radlader/Bagger, MzKW",Info:"Räumen/Abstützen"},
       {Stichwort:"HW - Eigensicherung",Fahrzeuge_AAO:"HW: GKW, EGS",Info:"Eigentumssicherung"},
-      {Stichwort:"HW - Logistik",Fahrzeuge_AAO:"HW: LKW K9, MTW OV",Info:"Logistik/Material"},
+      {Stichwort:"HW - Logistik",Fahrzeuge_AAO:"HW: LKW K9, MTW OV",Info:"Logistik"},
       {Stichwort:"HW - Brücke",Fahrzeuge_AAO:"HW: Brückenbau-Trupp",Info:"Behelfsbrücke"},
       {Stichwort:"HW - Fachberater",Fahrzeuge_AAO:"HW: FB OV",Info:"Fachberater HW"},
-
-      // Rettungsdienst / Sonderlagen
+      // RD / Sonderlagen
       {Stichwort:"Krankentransport",Fahrzeuge_AAO:"NKTW oder RTW",Info:"Transport ohne Eile"},
       {Stichwort:"Notfall 1",Fahrzeuge_AAO:"RTW oder NKTW",Info:"Allgemeiner Notfall"},
-      {Stichwort:"Hilflose Person",Fahrzeuge_AAO:"RTW oder NKTW",Info:"Tür öffnen / Hilfe"},
-      {Stichwort:"Trauma",Fahrzeuge_AAO:"RTW",Info:"Trauma ohne Polytrauma"},
-      /* Änderung: N2 jetzt mit NEF (ARO) */
+      {Stichwort:"Hilflose Person",Fahrzeuge_AAO:"RTW oder NKTW",Info:"Tür öffnen/Hilfe"},
+      {Stichwort:"Trauma",Fahrzeuge_AAO:"RTW",Info:"Trauma"},
       {Stichwort:"Notfall 2",Fahrzeuge_AAO:"RTW & NEF",Info:"kritischer Notfall – gemäß ARO mit NEF"},
-      {Stichwort:"Reanimation",Fahrzeuge_AAO:"RTW, NEF (ggf.)",Info:"CPR/Herzstillstand"},
+      {Stichwort:"Reanimation",Fahrzeuge_AAO:"RTW, NEF (ggf.)",Info:"CPR"},
       {Stichwort:"Polytrauma",Fahrzeuge_AAO:"RTH & NEF & RTW",Info:"Schwerstverletzte"},
-
       {Stichwort:"MANV-1",Fahrzeuge_AAO:"3x RTW, 2x NEF, 1x NKTW, LF KatS, LNA, San-Zug",Info:"5–9 Verletzte"},
       {Stichwort:"MANV-2",Fahrzeuge_AAO:"+ ORGL, ELRD, Betreuungszug",Info:"10–19 Verletzte"},
       {Stichwort:"MANV-3",Fahrzeuge_AAO:"+ ÄLRD, Versorgungszug",Info:"20–29 Verletzte"},
@@ -113,51 +139,37 @@
     ];
     const byKey=k=>AAO.find(e=>e.Stichwort.toLowerCase()===(k||"").toLowerCase())||null;
 
-    const BRAND_SUBS={
-      klein:["PKW","Container","Kamin","Garage","Mülltonne","Hecke"],
-      mittel:["Wohnung","Dachstuhl","Keller","LKW","Scheune"],
-      gross:["Industrie","Landwirtschaft","Halle","Hochhaus"]
-    };
-
-    const AAO_ERHOEHUNG_GROUPS=[
-      {title:"Lösch-/Rüstfahrzeuge",items:[{key:"(H)LF",label:"(H)LF"},{key:"TLF",label:"TLF"},{key:"RW",label:"RW"},{key:"DLK",label:"DLK"}]},
-      {title:"Führung BF/FF",items:[{key:"ELW 1",label:"ELW 1"},{key:"ELW 2",label:"ELW 2"},{key:"KdoW A-Dienst",label:"KdoW A-Dienst"},{key:"KdoW B-Dienst",label:"KdoW B-Dienst"},{key:"KdoW C-Dienst",label:"KdoW C-Dienst"},{key:"IuK",label:"IuK"}]},
-      {title:"Rettungsdienst & Führung RD",items:[{key:"RTW",label:"RTW"},{key:"NEF",label:"NEF"},{key:"NKTW",label:"NKTW"},{key:"ORGL",label:"ORGL (OrgL RD)"},{key:"LNA",label:"LNA"},{key:"ELRD",label:"ELRD"},{key:"ÄLRD",label:"ÄLRD"},{key:"UG-Rett",label:"UG-Rett"}]},
-      {title:"Wasser / Gefahrgut / Messen / Dekon",items:[{key:"GW-G",label:"GW-G"},{key:"GW-W",label:"GW-W"},{key:"GW-Mess",label:"GW-Mess"},{key:"Dekon-P",label:"Dekon-P"}]},
-      {title:"HW",items:[{key:"HW GKW/MzKW",label:"HW GKW/MzKW"},{key:"HW Anh. Licht",label:"HW Anh. Licht"},{key:"HW Hochwasserpumpe",label:"HW Hochwasserpumpe"},{key:"HW Räumen (Bagger/Radlader)",label:"HW Räumen"},{key:"HW Logistik (LKW/MTW OV)",label:"HW Logistik"},{key:"HW Brückenbau",label:"HW Brückenbau"},{key:"HW Fachberater",label:"HW Fachberater"}]}
-    ];
-
+    const BRAND_SUBS={klein:["PKW","Container","Kamin","Garage","Mülltonne","Hecke"],mittel:["Wohnung","Dachstuhl","Keller","LKW","Scheune"],gross:["Industrie","Landwirtschaft","Halle","Hochhaus"]};
     const RD_SUBS=["Krankentransport","Notfall 1","Hilflose Person","Trauma","Notfall 2","Reanimation","Polytrauma"];
     const TH_LIST=AAO.filter(e=>e.Stichwort.startsWith("TH - ")).map(e=>e.Stichwort);
     const ABC_LIST=AAO.filter(e=>e.Stichwort.startsWith("ABC")).map(e=>e.Stichwort).concat(["Messen 1","Messen 2","Dekon-P"]);
     const BMA_LIST=["BMA","BMA - Industrie","Heimrauchmelder","CO-Melder"];
     const HW_LIST=AAO.filter(e=>e.Stichwort.startsWith("HW - ")).map(e=>e.Stichwort);
 
-    /* ====== Utils ====== */
+    /* ===== Utils & Logik ===== */
     const num=v=>typeof v==="number"?v:(v===""?0:Number(v));
     const niceExtra=x=>({PKW:"PKW-Brand",Container:"Containerbrand",Kamin:"Kaminbrand",Garage:"Garagenbrand",Mülltonne:"Mülltonnenbrand",Hecke:"Heckenbrand",Wohnung:"Wohnungsbrand",Dachstuhl:"Dachstuhlbrand",Keller:"Kellerbrand",LKW:"LKW-Brand",Industrie:"Industriebrand",Landwirtschaft:"Landwirtschaftsbrand",Halle:"Hallenbrand",Hochhaus:"Hochhausbrand"}[x]||x);
     function brandCodeAndText(size,persons){const p=num(persons);if(p>=3)return{code:"B4Y",text:""};if(p===2)return{code:"B3Y",text:""};if(p===1)return{code:"B2Y",text:""};if(size==="gross")return{code:"B3",text:"Groß"};if(size==="mittel")return{code:"B2",text:"Mittel"};return{code:"B1",text:"Klein"};}
     const manvFromPersons=n=>{const v=Number(n||0);if(v>=20)return"MANV-3";if(v>=10)return"MANV-2";if(v>=5)return"MANV-1";return"";}
 
-    /* RD-Logik: automatische RTW je Patient bis < MANV; ab MANV automatische MANV-AAO */
+    // RD-Automatik: +RTW = Patienten - 1 (bis <5); ab 5 greift MANV-AAO
     function autoRTWCounts(a){
       if(a.category!=="Rettungsdienst")return {};
       const p=Number(a.personsInDanger||0);
       if(!Number.isFinite(p)||p<=1)return {};
-      if(p>=5)return {};            // ab MANV keine RTW-Skalierung
-      const add=Math.max(0,p-1);    // 1 RTW ist in der RD-Basis-AAO enthalten
-      return add?{RTW:add}:{};
+      if(p>=5)return {};
+      return {RTW: p-1};
     }
     function autoMANVEntry(a){
       if(a.category!=="Rettungsdienst")return null;
       const key=manvFromPersons(a.personsInDanger);
-      return key?byKey(key):null;   // MANV-1/2/3 oder null (<5)
+      return key?byKey(key):null;
     }
-    function mergeCounts(a,b){
-      const o={...a};
-      Object.entries(b||{}).forEach(([k,n])=>{o[k]=(o[k]||0)+n});
-      return o;
-    }
+    function mergeCounts(a,b){const o={...a};Object.entries(b||{}).forEach(([k,n])=>o[k]=(o[k]||0)+n);return o;}
+    function increaseListFromCounts(c){return Object.entries(c).filter(([,n])=>n>0).map(([k,n])=>`+${n} ${k}`)}
+    function buildVehiclesWithIncrease(base,counts){const incList=increaseListFromCounts(counts);return (base||"(offen)")+(incList.length?" + "+incList.join(", "):"");}
+    function combineVehicles(base,extra){if(!extra)return base||"(offen)";const ex=extra.Fahrzeuge_AAO||"";return(base||"(offen)")+(ex?` + ${ex}`:"")}
+    function combineVehiclesMulti(base,extras){return extras.reduce((acc,e)=>combineVehicles(acc,e),base||"(offen)")}
 
     function pickAAO(a){
       if(a.category==="MANV/Sonderlage"){
@@ -195,12 +207,6 @@
       return null;
     }
 
-    function increaseListFromCounts(c){return Object.entries(c).filter(([,n])=>n>0).map(([k,n])=>`+${n} ${k}`)}
-    function buildVehiclesWithIncrease(base,counts){
-      const incList=increaseListFromCounts(counts);
-      return (base||"(offen)")+(incList.length?" + "+incList.join(", "):"");
-    }
-
     function buildMail(a,entry,counts,extras,infoFlags){
       const incList=increaseListFromCounts(counts);
       const extraStw=extras.map(e=>e.Stichwort).join(" + ");
@@ -211,7 +217,7 @@
         `—`,
         `Details: ${a.details || "(keine)"}`,
         `Kategorie: ${a.category || "(unbekannt)"}`,
-        `Personen gesamt / in Gefahr: ${a.personsInDanger === "" ? "(unbekannt)" : a.personsInDanger}`,
+        `Personen/Patienten gesamt: ${a.personsInDanger === "" ? "(unbekannt)" : a.personsInDanger}`,
         `Bewusst/Atmung (nur RD): ${a.unconscious}/${a.breathing}`,
         `RD-Unterstichwort: ${a.rdSub || "(k.A.)"}`,
         ...(infoFlags.length ? [`Weitere Hinweise: ${infoFlags.join(", ")}`] : []),
@@ -222,35 +228,20 @@
       const mailto=`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
       return{subject,body,mailto};
     }
-    function combineVehicles(base,extra){if(!extra)return base||"(offen)";const ex=extra.Fahrzeuge_AAO||"";return(base||"(offen)")+(ex?` + ${ex}`:"")}
-    function combineVehiclesMulti(base,extras){return extras.reduce((acc,e)=>combineVehicles(acc,e),base||"(offen)")}
 
-    function validate(a){
-      const errors=[];
-      if(!a.category)errors.push({key:"category",msg:"Kategorie wählen.",block:true});
-      if(a.personsInDanger!==""&&(isNaN(a.personsInDanger)||Number(a.personsInDanger)<0))errors.push({key:"personsInDanger",msg:"Anzahl Personen muss eine Zahl ≥ 0 sein.",block:true});
-      switch(a.category){
-        case"Brand":if(!a.fireSize)errors.push({key:"fireSize",msg:"Brandgröße auswählen (klein/mittel/gross).",block:true});break;
-        case"BMA":if(!a.bmaType)errors.push({key:"bmaType",msg:"BMA-Stichwort auswählen.",block:true});break;
-        case"Technische Hilfe":if(!a.thType)errors.push({key:"thType",msg:"TH-Stichwort auswählen.",block:true});break;
-        case"ABC":if(!a.abcType)errors.push({key:"abcType",msg:"ABC-Stichwort auswählen.",block:true});break;
-        case"HW":if(!a.thwType)errors.push({key:"thwType",msg:"HW-Auftrag auswählen.",block:true});break;
-        case"Rettungsdienst":if(!a.rdSub&&!(a.details&&a.details.trim().length>2))errors.push({key:"rdSub",msg:"RD-Unterstichwort wählen oder Details angeben.",block:false});break;
-      }
-      const map=Object.fromEntries(errors.map(e=>[e.key,e]));
-      return{errors,map};
-    }
-
-    /* ====== UI-Minikomponenten ====== */
+    /* ===== UI-Bausteine ===== */
     const LabeledInput=({label,value,onChange,type="text",invalid=false,help=""})=>(
       <label className="block"><span className="block text-sm font-medium mb-1">{label}</span>
       <input type={type} className={`w-full border rounded-xl p-2 ${invalid?'invalid':''}`} value={value} onChange={(e)=>onChange(e.target.value)} aria-invalid={invalid}/>
       {invalid&&<div className="text-xs text-red-400 mt-1">{help||"Bitte prüfen."}</div>}</label>);
+
     const NumberInput=({label,value,onChange,invalid=false,help=""})=>(
       <label className="block"><span className="block text-sm font-medium mb-1">{label}</span>
       <input type="number" min="0" className={`w-full border rounded-xl p-2 ${invalid?'invalid':''}`} value={value}
              onChange={(e)=>onChange(e.target.value===""?"":Number(e.target.value))} aria-invalid={invalid}/>
       {invalid&&<div className="text-xs text-red-400 mt-1">{help||"Bitte Zahl eingeben."}</div>}</label>);
+
+    // Schwarzes Dropdown
     const Select=({label,value,options,onChange,invalid=false,help=""})=>{
       const[open,setOpen]=useState(false);const btnRef=React.useRef(null);const menuRef=React.useRef(null);
       const idx=Math.max(0,options.findIndex(o=>o===value));const[active,setActive]=useState(idx);
@@ -264,13 +255,13 @@
         else if(e.key==="ArrowUp"){e.preventDefault();setActive(a=>Math.max(0,a-1))}
         else if(e.key==="Home"){e.preventDefault();setActive(0)}else if(e.key==="End"){e.preventDefault();setActive(options.length-1)}
         else if(e.key==="Enter"||e.key===" "){e.preventDefault();const val=options[Math.max(0,active)];onChange(val);setOpen(false);btnRef.current?.focus()}}
-      useEffect(()=>{if(!open||!menuRef.current)return;const el=menuRef.current.querySelector(`.ds-item.ds-active`);if(el){const m=menuRef.current;const top=el.offsetTop,bottom=top+el.offsetHeight;if(top<m.scrollTop)m.scrollTop=top;else if(bottom>m.scrollTop+m.clientHeight)m.scrollTop=bottom-m.clientHeight}},[open,active]);
+      useEffect(()=>{if(!open||!menuRef.current)return;const el=menuRef.current.querySelector('.ds-item.ds-active');if(el){const m=menuRef.current;const top=el.offsetTop,bottom=top+el.offsetHeight;if(top<m.scrollTop)m.scrollTop=top;else if(bottom>m.scrollTop+m.clientHeight)m.scrollTop=bottom-m.clientHeight}},[open,active]);
       return(<label className="block"><span className="block text-sm font-medium mb-1">{label}</span>
         <div className="ds-wrap">
           <button type="button" ref={btnRef} className={`ds-btn ${invalid?"invalid":""}`} aria-haspopup="listbox" aria-expanded={open}
                   onClick={()=>setOpen(o=>!o)} onKeyDown={onKeyDown}>{value||"— auswählen —"}</button>
           <span className="ds-caret">▾</span>
-          {open&&(<div ref={menuRef} className="ds-menu" role="listbox" tabIndex={-1} aria-label={typeof label==="string"?label:"Auswahl"}>
+          {open&&(<div ref={menuRef} className="ds-menu" role="listbox" tabIndex={-1}>
             {options.map((opt,i)=>(
               <div key={opt+i} role="option" aria-selected={i===idx} className={`ds-item ${i===active?"ds-active":""}`}
                    onMouseEnter={()=>setActive(i)} onClick={()=>{onChange(opt);setOpen(false);btnRef.current?.focus();}}>
@@ -281,85 +272,94 @@
         {invalid&&<div className="text-xs text-red-400 mt-1">{help}</div>}
       </label>);
     };
+
     const Section=({title,hint,children})=>(<div className="subcard mb-3"><div className="subhead"><span>{title}</span>{hint&&<span className="hint-sm">· {hint}</span>}</div>{children}</div>));
 
-    /* ====== App ====== */
+    /* ===== App ===== */
     function App(){
       const initialState={
         category:"",personsInDanger:"",unconscious:"unbekannt",breathing:"unbekannt",
         fireSize:"",brandExtras:[],thType:"",bmaType:"",abcType:"",thwType:"",rdSub:"",
         details:"",
-        // Sonderlagen (manuell)
         manvActive:false,manvAuto:true,manvLevel:"",
         rdazActive:false,altlActive:false,cbrnActive:false,evacuationActive:false
       };
       const[a,setA]=useState(initialState);
-      const[incCounts,setIncCounts]=useState({});
-      const incPlus=k=>setIncCounts(s=>({...s,[k]:Math.max(0,(s[k]||0)+1)}));
-      const incMinus=k=>setIncCounts(s=>({...s,[k]:Math.max(0,(s[k]||0)-1)}));
-      const incReset=()=>setIncCounts({});
+      const[inc,setInc]=useState({});
+      const incPlus=k=>setInc(s=>({...s,[k]:Math.max(0,(s[k]||0)+1)}));
+      const incMinus=k=>setInc(s=>({...s,[k]:Math.max(0,(s[k]||0)-1)}));
+      const incReset=()=>setInc({});
 
       const setField=(k,v)=>setA(s=>({...s,[k]:v}));
-      const {errors,map}=useMemo(()=>validate(a),[a]);
+
+      const errors=useMemo(()=>{
+        const out=[]; const z=a.personsInDanger;
+        if(!a.category) out.push({key:"category",msg:"Kategorie wählen."});
+        if(z!==""&&(isNaN(z)||Number(z)<0)) out.push({key:"personsInDanger",msg:"Anzahl muss Zahl ≥ 0 sein."});
+        if(a.category==="Brand" && !a.fireSize) out.push({key:"fireSize",msg:"Brandgröße wählen."});
+        if(a.category==="BMA" && !a.bmaType) out.push({key:"bmaType",msg:"BMA-Stichwort wählen."});
+        if(a.category==="Technische Hilfe" && !a.thType) out.push({key:"thType",msg:"TH-Stichwort wählen."});
+        if(a.category==="ABC" && !a.abcType) out.push({key:"abcType",msg:"ABC-Stichwort wählen."});
+        if(a.category==="HW" && !a.thwType) out.push({key:"thwType",msg:"HW-Auftrag wählen."});
+        if(a.category==="Rettungsdienst" && !a.rdSub && !(a.details && a.details.trim().length>2)) out.push({key:"rdSub",msg:"RD-Unterstichwort wählen oder Details angeben."});
+        return out;
+      },[a]);
+      const invalidMap=Object.fromEntries(errors.map(e=>[e.key,e.msg]));
+
       const entry=useMemo(()=>pickAAO(a),[a]);
 
-      // Automatik: RTW-Counts aus Patientenzahl (RD) bis < MANV
+      // Automatik
       const autoCounts=useMemo(()=>autoRTWCounts(a),[a]);
-
-      // Automatik: MANV-Eintrag ab ≥ 5 Patienten (bei RD)
       const autoManv=useMemo(()=>autoMANVEntry(a),[a]);
 
-      // Manuelle MANV / Sonderlagen
+      // Manuelles MANV
       const manualManvKey=useMemo(()=>{
-        if(!a.manvActive)return"";
-        if(a.manvAuto)return manvFromPersons(a.personsInDanger);
+        if(!a.manvActive) return "";
+        if(a.manvAuto)    return manvFromPersons(a.personsInDanger);
         return a.manvLevel||"";
       },[a.manvActive,a.manvAuto,a.manvLevel,a.personsInDanger]);
       const manualManv=useMemo(()=>manualManvKey?byKey(manualManvKey):null,[manualManvKey]);
 
-      const extraEntries=useMemo(()=>{
+      const extras=useMemo(()=>{
         const list=[];
-        if(a.rdazActive){const e=byKey("RDAZ-1");if(e)list.push(e);}
-        if(a.altlActive){const e=byKey("AL/TL"); if(e)list.push(e);}
+        if(a.rdazActive){const e=byKey("RDAZ-1"); if(e) list.push(e);}
+        if(a.altlActive){const e=byKey("AL/TL");  if(e) list.push(e);}
         if(manualManv) list.push(manualManv);
         if(autoManv && !list.find(x=>x.Stichwort===autoManv.Stichwort)) list.push(autoManv);
         return list;
       },[a.rdazActive,a.altlActive,manualManv,autoManv]);
 
-      // Info-Flags ohne AAO
       const infoFlags=useMemo(()=>{
         const f=[]; if(a.cbrnActive)f.push("CBRN-/Gefahrstoff-Lage"); if(a.evacuationActive)f.push("Evakuierung"); return f;
       },[a.cbrnActive,a.evacuationActive]);
 
-      // Gesamte Erhöhungen (manuell + automatisch)
-      const totalCounts=useMemo(()=>mergeCounts(incCounts,autoCounts),[incCounts,autoCounts]);
+      const totalCounts=useMemo(()=>mergeCounts(inc,autoCounts),[inc,autoCounts]);
 
-      const mail=useMemo(()=>buildMail(a,entry,totalCounts,extraEntries,infoFlags),[a,entry,totalCounts,extraEntries,infoFlags]);
-
+      // Anzeige
       const displayStichwort=useMemo(()=>{
         let base="";
         if(a.category!=="Brand"){
           base=entry?.Stichwort||"(nicht bestimmt)";
         }else{
-          const p=num(a.personsInDanger);const {code,text}=brandCodeAndText(a.fireSize,p);
+          const {code,text}=brandCodeAndText(a.fireSize,a.personsInDanger);
           const ex=a.brandExtras||[];
           base=ex.length?`${code} ${ex.map(niceExtra).join(" / ")}`:(text?`${code} ${text}`:code);
         }
-        const extraTxt=extraEntries.map(e=>e.Stichwort).join(" + ");
+        const extraTxt=extras.map(e=>e.Stichwort).join(" + ");
         if(extraTxt) base+=` + ${extraTxt}`;
         return base;
-      },[a,entry,extraEntries]);
+      },[a,entry,extras]);
 
       const alarm=useMemo(()=>{
         const parts=[];
         if(a.category==="Brand"){
           const {code,text}=brandCodeAndText(a.fireSize,a.personsInDanger);
-          const extras=(a.brandExtras||[]);
-          parts.push(extras.length?`${code} ${extras.map(niceExtra).join(" / ")}`:(text?`${code} ${text}`:code));
+          const ex=a.brandExtras||[];
+          parts.push(ex.length?`${code} ${ex.map(niceExtra).join(" / ")}`:(text?`${code} ${text}`:code));
         }else{
           parts.push(entry?.Stichwort||"(Stichwort)");
         }
-        extraEntries.forEach(e=>parts.push(e.Stichwort));
+        extras.forEach(e=>parts.push(e.Stichwort));
         const p=num(a.personsInDanger);if(p>0)parts.push(`P:${p}`);
         if(a.category==="Rettungsdienst"){
           if(a.rdSub)parts.push(`RD:${a.rdSub}`);
@@ -367,234 +367,248 @@
           if(a.breathing!=="unbekannt")parts.push(`Atm:${a.breathing}`);
         }
         infoFlags.forEach(t=>parts.push(t));
-        const incList=increaseListFromCounts(totalCounts);
-        if(incList.length)parts.push("E: "+incList.join(", "));
-        const det=(a.details||"").trim();if(det)parts.push(det.slice(0,60));
+        const incList=increaseListFromCounts(totalCounts); if(incList.length)parts.push("E: "+incList.join(", "));
+        const det=(a.details||"").trim(); if(det)parts.push(det.slice(0,60));
         let out=parts.filter(Boolean).join(" | ").replace(/\s+/g," ").trim();
         if(out.length>160)out=out.slice(0,159)+"…";
         return out;
-      },[a,entry,extraEntries,infoFlags,totalCounts]);
+      },[a,entry,extras,infoFlags,totalCounts]);
+
+      const mail=useMemo(()=>buildMail(a,entry,totalCounts,extras,infoFlags),[a,entry,totalCounts,extras,infoFlags]);
+
+      // Root anzeigen (und Boot-Msg entfernen)
+      useEffect(()=>{const boot=document.getElementById('boot-msg'); if(boot) boot.remove();},[]);
 
       const copy=async(t)=>{try{await navigator.clipboard.writeText(t||"")}catch{}};
-      const resetAll=()=>{setA(initialState);setIncCounts({});};
+      const resetAll=()=>{setA(initialState);setInc({});};
 
-      /* ====== UI ====== */
-      return(<div className="min-h-screen p-6">
-        <div className="mx-auto max-w-6xl">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold tracking-tight">Notrufabfrage • AAO</h1>
-            <button className="btn" onClick={resetAll}>Reset</button>
-          </div>
-
-          {errors.length>0&&(
-            <div className="mt-3 mb-2 p-3 card">
-              <div className="font-semibold text-red-400 mb-1">Bitte prüfen ({errors.length}):</div>
-              <ul className="list-disc pl-5 text-sm text-red-300">{errors.map((e,i)=><li key={i}>{e.msg}</li>)}</ul>
+      // UI
+      return (
+        <div className="min-h-screen p-6">
+          <div className="mx-auto max-w-6xl">
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold tracking-tight">Notrufabfrage • AAO</h1>
+              <button className="btn" onClick={resetAll}>Reset</button>
             </div>
-          )}
 
-          <div className="grid lg:grid-cols-3 gap-4 mt-3">
-            {/* Eingabe */}
-            <section className="lg:col-span-2 card p-4">
-              <h2 className="font-semibold mb-3">Einsatzdaten</h2>
+            {errors.length>0&&(
+              <div className="mt-3 mb-2 p-3 card">
+                <div className="font-semibold text-red-400 mb-1">Bitte prüfen ({errors.length}):</div>
+                <ul className="list-disc pl-5 text-sm text-red-300">{errors.map((e,i)=><li key={i}>{e.msg}</li>)}</ul>
+              </div>
+            )}
 
-              <Section title="Kategorie" hint="Bestimmt Folgefelder">
-                <div className="grid2">
-                  <Select label={<span className="req">Kategorie</span>} value={a.category} onChange={v=>setField("category",v)}
-                          options={["","Brand","BMA","Technische Hilfe","ABC","HW","Rettungsdienst","MANV/Sonderlage"]}
-                          invalid={!!map.category} help={map.category?.msg}/>
-                  <LabeledInput label="Kurzlage (optional)" value={a.details} onChange={v=>setField("details",v)}/>
-                </div>
-              </Section>
+            <div className="grid lg:grid-cols-3 gap-4 mt-3">
+              {/* Eingabe */}
+              <section className="lg:col-span-2 card p-4">
+                <h2 className="font-semibold mb-3">Einsatzdaten</h2>
 
-              {a.category==="Brand"&&(<Section title="Brand" hint="Größe & Zusatz">
-                <div className="grid3">
-                  <Select label={<span className="req">Brandgröße</span>} value={a.fireSize} onChange={v=>setField("fireSize",v)}
-                          options={["","klein","mittel","gross"]} invalid={!!map.fireSize} help={map.fireSize?.msg}/>
-                  <NumberInput label="Personen in Gefahr" value={a.personsInDanger} onChange={v=>setField("personsInDanger",v)}
-                               invalid={!!map.personsInDanger} help={map.personsInDanger?.msg}/>
-                  <LabeledInput label="Objekt (optional)" value={a.details} onChange={v=>setField("details",v)}/>
-                </div>
-                {(BRAND_SUBS[a.fireSize]||[]).length>0&&(
-                  <>
-                    <div className="divider"></div>
-                    <div className="subhead">Zusatz-Stichworte</div>
-                    <div className="flex flex-wrap gap-2">
-                      {(BRAND_SUBS[a.fireSize]||[]).map(x=>(
-                        <label key={x} className="inline-flex items-center gap-2">
-                          <input type="checkbox" className="w-4 h-4"
-                                 checked={(a.brandExtras||[]).includes(x)}
-                                 onChange={()=>{const set=new Set(a.brandExtras||[]);set.has(x)?set.delete(x):set.add(x);setField("brandExtras",[...set])}}/>
-                          <span className="text-sm">{x}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </Section>)}
-
-              {a.category==="BMA"&&(<Section title="Brandmeldeanlage" hint="">
-                <div className="grid3">
-                  <Select label={<span className="req">BMA-Typ</span>} value={a.bmaType} onChange={v=>setField("bmaType",v)}
-                          options={["",...BMA_LIST]} invalid={!!map.bmaType} help={map.bmaType?.msg}/>
-                  <NumberInput label="Personen gefährdet (optional)" value={a.personsInDanger} onChange={v=>setField("personsInDanger",v)}
-                               invalid={!!map.personsInDanger} help={map.personsInDanger?.msg}/>
-                  <LabeledInput label="Objekt (optional)" value={a.details} onChange={v=>setField("details",v)}/>
-                </div>
-              </Section>)}
-
-              {a.category==="Technische Hilfe"&&(<Section title="Technische Hilfe" hint="">
-                <div className="grid3">
-                  <Select label={<span className="req">TH-Stichwort</span>} value={a.thType} onChange={v=>setField("thType",v)}
-                          options={["",...TH_LIST]} invalid={!!map.thType} help={map.thType?.msg}/>
-                  <NumberInput label="Betroffene (optional)" value={a.personsInDanger} onChange={v=>setField("personsInDanger",v)}
-                               invalid={!!map.personsInDanger} help={map.personsInDanger?.msg}/>
-                  <LabeledInput label="Details (optional)" value={a.details} onChange={v=>setField("details",v)}/>
-                </div>
-              </Section>)}
-
-              {a.category==="ABC"&&(<Section title="ABC" hint="">
-                <div className="grid3">
-                  <Select label={<span className="req">ABC-Stichwort</span>} value={a.abcType} onChange={v=>setField("abcType",v)}
-                          options={["",...ABC_LIST]} invalid={!!map.abcType} help={map.abcType?.msg}/>
-                  <NumberInput label="Betroffene (optional)" value={a.personsInDanger} onChange={v=>setField("personsInDanger",v)}
-                               invalid={!!map.personsInDanger} help={map.personsInDanger?.msg}/>
-                  <LabeledInput label="Gefahrstoff/UN (optional)" value={a.details} onChange={v=>setField("details",v)}/>
-                </div>
-              </Section>)}
-
-              {a.category==="HW"&&(<Section title="HW (vormals THW)" hint="">
-                <div className="grid3">
-                  <Select label={<span className="req">HW-Auftrag</span>} value={a.thwType} onChange={v=>setField("thwType",v)}
-                          options={["",...HW_LIST]} invalid={!!map.thwType} help={map.thwType?.msg}/>
-                  <NumberInput label="Betroffene (optional)" value={a.personsInDanger} onChange={v=>setField("personsInDanger",v)}
-                               invalid={!!map.personsInDanger} help={map.personsInDanger?.msg}/>
-                  <LabeledInput label="Lage/Objekt (optional)" value={a.details} onChange={v=>setField("details",v)}/>
-                </div>
-              </Section>)}
-
-              {a.category==="Rettungsdienst"&&(<Section title="Rettungsdienst" hint="RTW skaliert automatisch nach Patienten (bis < MANV)">
-                <div className="grid3">
-                  <Select label="RD-Unterstichwort" value={a.rdSub} onChange={v=>setField("rdSub",v)} options={["",...RD_SUBS]} invalid={!!map.rdSub} help={map.rdSub?.msg}/>
-                  <Select label="Bewusstlos?" value={a.unconscious} onChange={v=>setField("unconscious",v)} options={["unbekannt","ja","nein"]}/>
-                  <Select label="Atmung vorhanden?" value={a.breathing} onChange={v=>setField("breathing",v)} options={["unbekannt","ja","nein"]}/>
-                </div>
-                <div className="grid2 mt-2">
-                  <NumberInput label="Patienten gesamt" value={a.personsInDanger} onChange={v=>setField("personsInDanger",v)}
-                               invalid={!!map.personsInDanger} help={map.personsInDanger?.msg}/>
-                  <LabeledInput label="Details (optional)" value={a.details} onChange={v=>setField("details",v)}/>
-                </div>
-                <div className="hint-sm mt-2">
-                  Automatik: bis 4 Patienten ⇒ **+RTW** nach Anzahl, ab 5 ⇒ **MANV-AO** (MANV-1/2/3) statt RTW-Skalierung.
-                </div>
-              </Section>)}
-
-              {/* Sonderlagen */}
-              <details className="subcard mb-3" open>
-                <summary className="subhead">Sonderlagen <span className="text-xs text-slate-400">(manuell)</span></summary>
-                <div className="grid2">
-                  <label className="inline-flex items-center gap-2">
-                    <input type="checkbox" className="w-4 h-4" checked={a.manvActive} onChange={e=>setField("manvActive",e.target.checked)}/>
-                    <span>MANV zuschalten</span>
-                  </label>
-                  <label className="inline-flex items-center gap-2">
-                    <input type="checkbox" className="w-4 h-4" checked={a.manvAuto} onChange={e=>setField("manvAuto",e.target.checked)} disabled={!a.manvActive}/>
-                    <span>MANV automatisch (nach Personen)</span>
-                  </label>
-                </div>
-                <div className="grid3 mt-2">
-                  <Select label="MANV-Level (manuell)" value={a.manvLevel} onChange={v=>setField("manvLevel",v)} options={["","MANV-1","MANV-2","MANV-3","RDAZ-1"]}/>
-                  <label className="inline-flex items-center gap-2">
-                    <input type="checkbox" className="w-4 h-4" checked={a.rdazActive} onChange={e=>setField("rdazActive",e.target.checked)}/>
-                    <span>RD-Ausnahmezustand (RDAZ-1)</span>
-                  </label>
-                  <label className="inline-flex items-center gap-2">
-                    <input type="checkbox" className="w-4 h-4" checked={a.altlActive} onChange={e=>setField("altlActive",e.target.checked)}/>
-                    <span>Amok/Terror (AL/TL)</span>
-                  </label>
-                </div>
-                <div className="divider"></div>
-                <div className="grid3">
-                  <label className="inline-flex items-center gap-2">
-                    <input type="checkbox" className="w-4 h-4" checked={a.cbrnActive} onChange={e=>setField("cbrnActive",e.target.checked)}/>
-                    <span>CBRN-/Gefahrstoff (Info)</span>
-                  </label>
-                  <label className="inline-flex items-center gap-2">
-                    <input type="checkbox" className="w-4 h-4" checked={a.evacuationActive} onChange={e=>setField("evacuationActive",e.target.checked)}/>
-                    <span>Evakuierung (Info)</span>
-                  </label>
-                </div>
-              </details>
-
-              {/* AAO-Erhöhung */}
-              <Section title="AAO-Erhöhung (Zusatzkräfte)" hint="Optional, manuell">
-                <div className="divider"></div>
-                {AAO_ERHOEHUNG_GROUPS.map(group=>(
-                  <div key={group.title} className="mb-3">
-                    <div className="text-xs font-semibold text-slate-300 mb-1">{group.title}</div>
-                    <div className="flex flex-wrap gap-2">
-                      {group.items.map(({key,label})=>(
-                        <div key={key} className="qty">
-                          <button type="button" onClick={()=>incMinus(key)} aria-label={`- ${label}`}>−</button>
-                          <span className="text-sm min-w-[1.5rem] text-center">{incCounts[key]||0}</span>
-                          <button type="button" onClick={()=>incPlus(key)} aria-label={`+ ${label}`}>+</button>
-                          <span className="text-sm ml-1">{label}</span>
-                        </div>
-                      ))}
-                    </div>
+                <Section title="Kategorie" hint="Bestimmt Folgefelder">
+                  <div className="grid2">
+                    <Select label={<span className="req">Kategorie</span>} value={a.category} onChange={v=>setField("category",v)}
+                            options={["","Brand","BMA","Technische Hilfe","ABC","HW","Rettungsdienst","MANV/Sonderlage"]}
+                            invalid={!!invalidMap.category} help={invalidMap.category}/>
+                    <LabeledInput label="Kurzlage (optional)" value={a.details} onChange={v=>setField("details",v)}/>
                   </div>
-                ))}
-                <div className="mt-2"><button type="button" className="btn" onClick={incReset}>Erhöhung zurücksetzen</button></div>
-              </Section>
-            </section>
+                </Section>
 
-            {/* Ergebnis */}
-            <section className="lg:col-span-1 card p-4">
-              <h2 className="font-semibold mb-3">Ergebnis</h2>
+                {a.category==="Brand"&&(<Section title="Brand" hint="Größe & Zusatz">
+                  <div className="grid3">
+                    <Select label={<span className="req">Brandgröße</span>} value={a.fireSize} onChange={v=>setField("fireSize",v)}
+                            options={["","klein","mittel","gross"]} invalid={!!invalidMap.fireSize} help={invalidMap.fireSize}/>
+                    <NumberInput label="Personen in Gefahr" value={a.personsInDanger} onChange={v=>setField("personsInDanger",v)}
+                                 invalid={!!invalidMap.personsInDanger} help={invalidMap.personsInDanger}/>
+                    <LabeledInput label="Objekt (optional)" value={a.details} onChange={v=>setField("details",v)}/>
+                  </div>
+                  {(BRAND_SUBS[a.fireSize]||[]).length>0&&(
+                    <>
+                      <div className="divider"></div>
+                      <div className="subhead">Zusatz-Stichworte</div>
+                      <div className="flex flex-wrap gap-2">
+                        {(BRAND_SUBS[a.fireSize]||[]).map(x=>(
+                          <label key={x} className="inline-flex items-center gap-2">
+                            <input type="checkbox" className="w-4 h-4"
+                                   checked={(a.brandExtras||[]).includes(x)}
+                                   onChange={()=>{const set=new Set(a.brandExtras||[]);set.has(x)?set.delete(x):set.add(x);setField("brandExtras",[...set])}}/>
+                            <span className="text-sm">{x}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </Section>)}
 
-              <div className="text-xs text-sky-300 mb-2">
-                {Object.keys(autoCounts).length>0 && <>Automatik: {increaseListFromCounts(autoCounts).join(", ")} (nach Patienten)</>}
-                {Object.keys(autoCounts).length>0 && autoManv && " · "}
-                {autoManv && <>Automatik: {autoManv.Stichwort} aktiv (ab Patienten ≥5)</>}
-              </div>
+                {a.category==="BMA"&&(<Section title="Brandmeldeanlage">
+                  <div className="grid3">
+                    <Select label={<span className="req">BMA-Typ</span>} value={a.bmaType} onChange={v=>setField("bmaType",v)}
+                            options={["",...BMA_LIST]} invalid={!!invalidMap.bmaType} help={invalidMap.bmaType}/>
+                    <NumberInput label="Personen gefährdet (optional)" value={a.personsInDanger} onChange={v=>setField("personsInDanger",v)}
+                                 invalid={!!invalidMap.personsInDanger} help={invalidMap.personsInDanger}/>
+                    <LabeledInput label="Objekt (optional)" value={a.details} onChange={v=>setField("details",v)}/>
+                  </div>
+                </Section>)}
 
-              <div className="mb-2">
-                <div className="text-xs text-slate-400">Stichwort</div>
-                <div className="text-sm">{displayStichwort}</div>
-                <div className="mt-1"><button className="btn text-xs" onClick={()=>copy(displayStichwort)}>Kopieren</button></div>
-              </div>
+                {a.category==="Technische Hilfe"&&(<Section title="Technische Hilfe">
+                  <div className="grid3">
+                    <Select label={<span className="req">TH-Stichwort</span>} value={a.thType} onChange={v=>setField("thType",v)}
+                            options={["",...TH_LIST]} invalid={!!invalidMap.thType} help={invalidMap.thType}/>
+                    <NumberInput label="Betroffene (optional)" value={a.personsInDanger} onChange={v=>setField("personsInDanger",v)}
+                                 invalid={!!invalidMap.personsInDanger} help={invalidMap.personsInDanger}/>
+                    <LabeledInput label="Details (optional)" value={a.details} onChange={v=>setField("details",v)}/>
+                  </div>
+                </Section>)}
 
-              <div className="mb-2">
-                <div className="text-xs text-slate-400">Fahrzeuge</div>
-                <div className="text-sm">
-                  {buildVehiclesWithIncrease(combineVehiclesMulti(entry?.Fahrzeuge_AAO, extraEntries), totalCounts)}
+                {a.category==="ABC"&&(<Section title="ABC">
+                  <div className="grid3">
+                    <Select label={<span className="req">ABC-Stichwort</span>} value={a.abcType} onChange={v=>setField("abcType",v)}
+                            options={["",...ABC_LIST]} invalid={!!invalidMap.abcType} help={invalidMap.abcType}/>
+                    <NumberInput label="Betroffene (optional)" value={a.personsInDanger} onChange={v=>setField("personsInDanger",v)}
+                                 invalid={!!invalidMap.personsInDanger} help={invalidMap.personsInDanger}/>
+                    <LabeledInput label="Gefahrstoff/UN (optional)" value={a.details} onChange={v=>setField("details",v)}/>
+                  </div>
+                </Section>)}
+
+                {a.category==="HW"&&(<Section title="HW (vormals THW)">
+                  <div className="grid3">
+                    <Select label={<span className="req">HW-Auftrag</span>} value={a.thwType} onChange={v=>setField("thwType",v)}
+                            options={["",...HW_LIST]} invalid={!!invalidMap.thwType} help={invalidMap.thwType}/>
+                    <NumberInput label="Betroffene (optional)" value={a.personsInDanger} onChange={v=>setField("personsInDanger",v)}
+                                 invalid={!!invalidMap.personsInDanger} help={invalidMap.personsInDanger}/>
+                    <LabeledInput label="Lage/Objekt (optional)" value={a.details} onChange={v=>setField("details",v)}/>
+                  </div>
+                </Section>)}
+
+                {a.category==="Rettungsdienst"&&(<Section title="Rettungsdienst" hint="RTW skaliert automatisch nach Patienten (bis < MANV)">
+                  <div className="grid3">
+                    <Select label="RD-Unterstichwort" value={a.rdSub} onChange={v=>setField("rdSub",v)} options={["",...RD_SUBS]} invalid={!!invalidMap.rdSub} help={invalidMap.rdSub}/>
+                    <Select label="Bewusstlos?" value={a.unconscious} onChange={v=>setField("unconscious",v)} options={["unbekannt","ja","nein"]}/>
+                    <Select label="Atmung vorhanden?" value={a.breathing} onChange={v=>setField("breathing",v)} options={["unbekannt","ja","nein"]}/>
+                  </div>
+                  <div className="grid2 mt-2">
+                    <NumberInput label="Patienten gesamt" value={a.personsInDanger} onChange={v=>setField("personsInDanger",v)}
+                                 invalid={!!invalidMap.personsInDanger} help={invalidMap.personsInDanger}/>
+                    <LabeledInput label="Details (optional)" value={a.details} onChange={v=>setField("details",v)}/>
+                  </div>
+                  <div className="hint-sm mt-2">
+                    Automatik: bis 4 Patienten ⇒ +RTW nach Anzahl; ab 5 ⇒ MANV-AAO (MANV-1/2/3) statt RTW-Skalierung.
+                  </div>
+                </Section>)}
+
+                {/* Sonderlagen */}
+                <details className="subcard mb-3" open>
+                  <summary className="subhead">Sonderlagen <span className="text-xs text-slate-400">(manuell)</span></summary>
+                  <div className="grid2">
+                    <label className="inline-flex items-center gap-2">
+                      <input type="checkbox" className="w-4 h-4" checked={a.manvActive} onChange={e=>setField("manvActive",e.target.checked)}/>
+                      <span>MANV zuschalten</span>
+                    </label>
+                    <label className="inline-flex items-center gap-2">
+                      <input type="checkbox" className="w-4 h-4" checked={a.manvAuto} onChange={e=>setField("manvAuto",e.target.checked)} disabled={!a.manvActive}/>
+                      <span>MANV automatisch (nach Personen)</span>
+                    </label>
+                  </div>
+                  <div className="grid3 mt-2">
+                    <Select label="MANV-Level (manuell)" value={a.manvLevel} onChange={v=>setField("manvLevel",v)} options={["","MANV-1","MANV-2","MANV-3","RDAZ-1"]}/>
+                    <label className="inline-flex items-center gap-2">
+                      <input type="checkbox" className="w-4 h-4" checked={a.rdazActive} onChange={e=>setField("rdazActive",e.target.checked)}/>
+                      <span>RD-Ausnahmezustand (RDAZ-1)</span>
+                    </label>
+                    <label className="inline-flex items-center gap-2">
+                      <input type="checkbox" className="w-4 h-4" checked={a.altlActive} onChange={e=>setField("altlActive",e.target.checked)}/>
+                      <span>Amok/Terror (AL/TL)</span>
+                    </label>
+                  </div>
+                  <div className="divider"></div>
+                  <div className="grid3">
+                    <label className="inline-flex items-center gap-2">
+                      <input type="checkbox" className="w-4 h-4" checked={a.cbrnActive} onChange={e=>setField("cbrnActive",e.target.checked)}/>
+                      <span>CBRN-/Gefahrstoff (Info)</span>
+                    </label>
+                    <label className="inline-flex items-center gap-2">
+                      <input type="checkbox" className="w-4 h-4" checked={a.evacuationActive} onChange={e=>setField("evacuationActive",e.target.checked)}/>
+                      <span>Evakuierung (Info)</span>
+                    </label>
+                  </div>
+                </details>
+
+                {/* AAO-Erhöhung */}
+                <Section title="AAO-Erhöhung (Zusatzkräfte)" hint="Optional, manuell">
+                  <div className="divider"></div>
+                  {[
+                    {title:"Lösch-/Rüstfahrzeuge",items:[{key:"(H)LF",label:"(H)LF"},{key:"TLF",label:"TLF"},{key:"RW",label:"RW"},{key:"DLK",label:"DLK"}]},
+                    {title:"Führung BF/FF",items:[{key:"ELW 1",label:"ELW 1"},{key:"ELW 2",label:"ELW 2"},{key:"KdoW A-Dienst",label:"KdoW A-Dienst"},{key:"KdoW B-Dienst",label:"KdoW B-Dienst"},{key:"KdoW C-Dienst",label:"KdoW C-Dienst"},{key:"IuK",label:"IuK"}]},
+                    {title:"Rettungsdienst & Führung RD",items:[{key:"RTW",label:"RTW"},{key:"NEF",label:"NEF"},{key:"NKTW",label:"NKTW"},{key:"ORGL",label:"ORGL (OrgL RD)"},{key:"LNA",label:"LNA"},{key:"ELRD",label:"ELRD"},{key:"ÄLRD",label:"ÄLRD"},{key:"UG-Rett",label:"UG-Rett"}]},
+                    {title:"Wasser / Gefahrgut / Messen / Dekon",items:[{key:"GW-G",label:"GW-G"},{key:"GW-W",label:"GW-W"},{key:"GW-Mess",label:"GW-Mess"},{key:"Dekon-P",label:"Dekon-P"}]},
+                    {title:"HW",items:[{key:"HW GKW/MzKW",label:"HW GKW/MzKW"},{key:"HW Anh. Licht",label:"HW Anh. Licht"},{key:"HW Hochwasserpumpe",label:"HW Hochwasserpumpe"},{key:"HW Räumen (Bagger/Radlader)",label:"HW Räumen"},{key:"HW Logistik (LKW/MTW OV)",label:"HW Logistik"},{key:"HW Brückenbau",label:"HW Brückenbau"},{key:"HW Fachberater",label:"HW Fachberater"}]}
+                  ].map(group=>(
+                    <div key={group.title} className="mb-3">
+                      <div className="text-xs font-semibold text-slate-300 mb-1">{group.title}</div>
+                      <div className="flex flex-wrap gap-2">
+                        {group.items.map(({key,label})=>(
+                          <div key={key} className="qty">
+                            <button type="button" onClick={()=>incMinus(key)} aria-label={`- ${label}`}>−</button>
+                            <span className="text-sm min-w-[1.5rem] text-center">{inc[key]||0}</span>
+                            <button type="button" onClick={()=>incPlus(key)} aria-label={`+ ${label}`}>+</button>
+                            <span className="text-sm ml-1">{label}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                  <div className="mt-2"><button type="button" className="btn" onClick={incReset}>Erhöhung zurücksetzen</button></div>
+                </Section>
+              </section>
+
+              {/* Ergebnis */}
+              <section className="lg:col-span-1 card p-4">
+                <h2 className="font-semibold mb-3">Ergebnis</h2>
+
+                <div className="text-xs text-sky-300 mb-2">
+                  {Object.keys(autoCounts).length>0 && <>Automatik: {increaseListFromCounts(autoCounts).join(", ")} (nach Patienten)</>}
+                  {Object.keys(autoCounts).length>0 && autoManv && " · "}
+                  {autoManv && <>Automatik: {autoManv.Stichwort} aktiv (ab Patienten ≥5)</>}
                 </div>
-                <div className="mt-1">
-                  <button className="btn text-xs" onClick={()=>copy(buildVehiclesWithIncrease(combineVehiclesMulti(entry?.Fahrzeuge_AAO, extraEntries), totalCounts))}>Kopieren</button>
-                </div>
-              </div>
 
-              <div className="text-xs text-slate-400 mt-3 mb-1">Alarmtext (Melder) <span className="opacity-60">({(alarm||"").length}/160)</span></div>
-              <textarea className="w-full rounded-2xl p-2 text-sm" rows="4" readOnly value={alarm}></textarea>
-              <div className="mt-1"><button className="btn text-xs" onClick={()=>copy(alarm)}>Kopieren</button></div>
-
-              <div className="border-t border-slate-700 my-3"></div>
-              <div className="flex items-center justify-between">
-                <h3 className="font-medium">Mailer</h3>
-                <div className="flex gap-2">
-                  <a className="btn text-xs bg-blue-600 text-white" href={mail.mailto}>In E-Mail öffnen</a>
-                  <button className="btn text-xs" onClick={()=>copy(mail.body)}>Kopieren</button>
+                <div className="mb-2">
+                  <div className="text-xs text-slate-400">Stichwort</div>
+                  <div className="text-sm">{displayStichwort}</div>
+                  <div className="mt-1"><button className="btn text-xs" onClick={()=>navigator.clipboard.writeText(displayStichwort)}>Kopieren</button></div>
                 </div>
-              </div>
-              <textarea className="w-full rounded-2xl p-2 text-sm mt-1" rows="10" readOnly value={mail.body}></textarea>
-            </section>
+
+                <div className="mb-2">
+                  <div className="text-xs text-slate-400">Fahrzeuge</div>
+                  <div className="text-sm">
+                    {buildVehiclesWithIncrease(combineVehiclesMulti(entry?.Fahrzeuge_AAO, extras), totalCounts)}
+                  </div>
+                  <div className="mt-1">
+                    <button className="btn text-xs" onClick={()=>navigator.clipboard.writeText(buildVehiclesWithIncrease(combineVehiclesMulti(entry?.Fahrzeuge_AAO, extras), totalCounts))}>Kopieren</button>
+                  </div>
+                </div>
+
+                <div className="text-xs text-slate-400 mt-3 mb-1">Alarmtext (Melder) <span className="opacity-60">({(alarm||"").length}/160)</span></div>
+                <textarea className="w-full rounded-2xl p-2 text-sm" rows="4" readOnly value={alarm}></textarea>
+                <div className="mt-1"><button className="btn text-xs" onClick={()=>navigator.clipboard.writeText(alarm)}>Kopieren</button></div>
+
+                <div className="border-t border-slate-700 my-3"></div>
+                <div className="flex items-center justify-between">
+                  <h3 className="font-medium">Mailer</h3>
+                  <div className="flex gap-2">
+                    <a className="btn text-xs bg-blue-600 text-white" href={buildMail(a,entry,totalCounts,extras,infoFlags).mailto}>In E-Mail öffnen</a>
+                    <button className="btn text-xs" onClick={()=>navigator.clipboard.writeText(buildMail(a,entry,totalCounts,extras,infoFlags).body)}>Kopieren</button>
+                  </div>
+                </div>
+                <textarea className="w-full rounded-2xl p-2 text-sm mt-1" rows="10" readOnly
+                          value={buildMail(a,entry,totalCounts,extras,infoFlags).body}></textarea>
+              </section>
+            </div>
           </div>
         </div>
-      </div>);
+      );
     }
 
-    const root=ReactDOM.createRoot(document.getElementById("root"));
-    root.render(<App/>);
+    // App mounten
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
   </script>
 </body>
 </html>
