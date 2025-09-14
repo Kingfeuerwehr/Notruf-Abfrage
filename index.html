@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Notrufabfrage • AAO (Dark • übersichtliche Maske)</title>
+  <title>Notrufabfrage • AAO (Dark • Sonderlagen & MANV)</title>
 
   <!-- React + Babel + Tailwind -->
   <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
@@ -42,6 +42,8 @@
     .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.75rem}
     @media (max-width:1024px){.grid2,.grid3{grid-template-columns:1fr}}
     .req::after{content:" *";color:#f87171;font-weight:700}
+    .k-pill{background:#0b1220;border:1px solid #1e293b;border-radius:9999px;padding:.25rem .55rem;font-size:.75rem}
+    summary{cursor:pointer;user-select:none}
   </style>
 </head>
 <body class="min-h-screen">
@@ -52,19 +54,93 @@
   <script type="text/babel" data-presets="env,react">
     const {useState,useMemo,useEffect}=React;
 
-    /* === Daten (AAO & Stichworte) – unverändert aus deiner Version === */
-    const AAO=[{Stichwort:"B - 1",Fahrzeuge_AAO:"(H)LF oder TLF",Info:"Brand klein"},{Stichwort:"B - 2",Fahrzeuge_AAO:"ELW 1, 2x (H)LF, DLK, TLF & RTW",Info:"Brand mittel"},{Stichwort:"B - 3",Fahrzeuge_AAO:"ELW 1, 3x (H)LF, DLK, 2x TLF & RTW",Info:"Brand groß"},{Stichwort:"B - 4",Fahrzeuge_AAO:"ELW 2, 4x (H)LF, DLK, 3x TLF, 2x RTW",Info:"Brand sehr groß"},{Stichwort:"B - 2Y",Fahrzeuge_AAO:"ELW 1, 2x (H)LF, DLK, TLF & NEF, 2x RTW",Info:"Brand mittel, P in Gefahr"},{Stichwort:"B - 3Y",Fahrzeuge_AAO:"ELW 1, 3x (H)LF, DLK, 2x TLF & NEF, 3x RTW",Info:"Brand groß, 2 P in Gefahr"},{Stichwort:"B - 4Y",Fahrzeuge_AAO:"ELW 2, 4x (H)LF, DLK, 3x TLF & 2x NEF, 4x RTW",Info:"Brand sehr groß, 3+ P"},{Stichwort:"BMA",Fahrzeuge_AAO:"ELW 1, (H)LF, DLK (bei Bedarf)",Info:"Brandmeldeanlage ausgelöst"},{Stichwort:"BMA - Industrie",Fahrzeuge_AAO:"ELW 1, 2x (H)LF, DLK, TLF",Info:"BMA Industrie"},{Stichwort:"Heimrauchmelder",Fahrzeuge_AAO:"(H)LF, DLK (örtlich)",Info:"Ausgelöster Heimrauchmelder"},{Stichwort:"CO-Melder",Fahrzeuge_AAO:"(H)LF, GW-Mess / Messen 1",Info:"CO-Alarm/Warner"},{Stichwort:"TH - 1",Fahrzeuge_AAO:"HLF",Info:"TH klein"},{Stichwort:"TH - 2",Fahrzeuge_AAO:"HLF, RW",Info:"TH mittel"},{Stichwort:"TH - 3",Fahrzeuge_AAO:"ELW 1, 2x HLF, RW, TLF",Info:"TH groß"},{Stichwort:"TH - VU",Fahrzeuge_AAO:"HLF, RW, RTW",Info:"Verkehrsunfall"},{Stichwort:"TH - P-klemmt",Fahrzeuge_AAO:"ELW 1, HLF, RW, TLF & NEF, 2x RTW",Info:"VU P eingeklemmt"},{Stichwort:"TH - Wasser",Fahrzeuge_AAO:"HLF, Boot, GW-W",Info:"Wasserrettung/-schaden"},{Stichwort:"TH - Höhen/Tiefen",Fahrzeuge_AAO:"HLF, RW, Höhenretter",Info:"SRHT"},{Stichwort:"TH - Gas 1",Fahrzeuge_AAO:"HLF",Info:"Gasgeruch"},{Stichwort:"TH - Gas 2",Fahrzeuge_AAO:"HLF, GW-G/AB-G",Info:"Gasleitung beschädigt"},{Stichwort:"ABC - 1",Fahrzeuge_AAO:"HLF, GW-G",Info:"Gefahrstoff klein"},{Stichwort:"ABC - 2",Fahrzeuge_AAO:"ELW 1, HLF, GW-G/AB-G, RTW",Info:"Gefahrstoff mittel"},{Stichwort:"ABC - 3",Fahrzeuge_AAO:"ELW 2, 2x HLF, GW-G/AB-G, Dekon-P, Messen 2, RTW",Info:"Gefahrstoff groß"},{Stichwort:"Messen 1",Fahrzeuge_AAO:"GW-Mess / KdoW (Messung)",Info:"Messtrupp klein"},{Stichwort:"Messen 2",Fahrzeuge_AAO:"GW-Mess, ELW 1",Info:"Messtrupp erweitert"},{Stichwort:"Dekon-P",Fahrzeuge_AAO:"Dekon-P, HLF",Info:"Dekontamination Personen"},{Stichwort:"HW - Beleuchtung",Fahrzeuge_AAO:"HW: MzKW/GKW, Anh. Licht",Info:"Einsatzbeleuchtung"},{Stichwort:"HW - Pumpen",Fahrzeuge_AAO:"HW: MzKW/GKW, Hochwasserpumpe",Info:"Wasser fördern"},{Stichwort:"HW - Räumen",Fahrzeuge_AAO:"HW: Radlader/Bagger, MzKW",Info:"Räumen/Abstützen"},{Stichwort:"HW - Eigensicherung",Fahrzeuge_AAO:"HW: GKW, EGS",Info:"Eigentumssicherung"},{Stichwort:"HW - Logistik",Fahrzeuge_AAO:"HW: LKW K9, MTW OV",Info:"Logistik/Material"},{Stichwort:"HW - Brücke",Fahrzeuge_AAO:"HW: Brückenbau-Trupp",Info:"Behelfsbrücke"},{Stichwort:"HW - Fachberater",Fahrzeuge_AAO:"HW: FB OV",Info:"Fachberater HW"},{Stichwort:"Krankentransport",Fahrzeuge_AAO:"NKTW oder RTW",Info:"Transport ohne Eile"},{Stichwort:"Notfall 1",Fahrzeuge_AAO:"RTW oder NKTW",Info:"Allgemeiner Notfall"},{Stichwort:"Hilflose Person",Fahrzeuge_AAO:"RTW oder NKTW",Info:"Tür öffnen/Hilfe Person"},{Stichwort:"Trauma",Fahrzeuge_AAO:"RTW",Info:"Trauma ohne Polytrauma"},{Stichwort:"Notfall 2",Fahrzeuge_AAO:"RTW",Info:"kritischer Notfall"},{Stichwort:"Reanimation",Fahrzeuge_AAO:"RTW, NEF (ggf.)",Info:"CPR/Herzstillstand"},{Stichwort:"Polytrauma",Fahrzeuge_AAO:"RTH & NEF & RTW",Info:"Schwerstverletzte"},{Stichwort:"MANV-1",Fahrzeuge_AAO:"3x RTW, 2x NEF, 1x NKTW, LF KatS, LNA, San-Zug",Info:"5–9 Verletzte"},{Stichwort:"MANV-2",Fahrzeuge_AAO:"+ ORGL, ELRD, Betreuungszug",Info:"10–19 Verletzte"},{Stichwort:"MANV-3",Fahrzeuge_AAO:"+ ÄLRD, Versorgungszug",Info:"20–29 Verletzte"},{Stichwort:"RDAZ-1",Fahrzeuge_AAO:"2x RTW/NKTW & 1x NEF",Info:"RD-Ausnahmezustand 1"},{Stichwort:"AL/TL",Fahrzeuge_AAO:"2x RTW, 1x NEF, LF KatS, LNA, ORGL, San-/Betreuungs-/Führungszug",Info:"Amok/Terror"}];
+    /* === Daten (AAO & Stichworte) === */
+    const AAO=[
+      // Brand
+      {Stichwort:"B - 1",Fahrzeuge_AAO:"(H)LF oder TLF",Info:"Brand klein"},
+      {Stichwort:"B - 2",Fahrzeuge_AAO:"ELW 1, 2x (H)LF, DLK, TLF & RTW",Info:"Brand mittel"},
+      {Stichwort:"B - 3",Fahrzeuge_AAO:"ELW 1, 3x (H)LF, DLK, 2x TLF & RTW",Info:"Brand groß"},
+      {Stichwort:"B - 4",Fahrzeuge_AAO:"ELW 2, 4x (H)LF, DLK, 3x TLF, 2x RTW",Info:"Brand sehr groß"},
+      {Stichwort:"B - 2Y",Fahrzeuge_AAO:"ELW 1, 2x (H)LF, DLK, TLF & NEF, 2x RTW",Info:"Brand mittel, P in Gefahr"},
+      {Stichwort:"B - 3Y",Fahrzeuge_AAO:"ELW 1, 3x (H)LF, DLK, 2x TLF & NEF, 3x RTW",Info:"Brand groß, 2 P in Gefahr"},
+      {Stichwort:"B - 4Y",Fahrzeuge_AAO:"ELW 2, 4x (H)LF, DLK, 3x TLF & 2x NEF, 4x RTW",Info:"Brand sehr groß, 3+ P"},
+      // BMA / CO / RWM
+      {Stichwort:"BMA",Fahrzeuge_AAO:"ELW 1, (H)LF, DLK (bei Bedarf)",Info:"Brandmeldeanlage ausgelöst"},
+      {Stichwort:"BMA - Industrie",Fahrzeuge_AAO:"ELW 1, 2x (H)LF, DLK, TLF",Info:"BMA Industrie"},
+      {Stichwort:"Heimrauchmelder",Fahrzeuge_AAO:"(H)LF, DLK (örtlich)",Info:"Ausgelöster Heimrauchmelder"},
+      {Stichwort:"CO-Melder",Fahrzeuge_AAO:"(H)LF, GW-Mess / Messen 1",Info:"CO-Alarm/Warner"},
+      // TH
+      {Stichwort:"TH - 1",Fahrzeuge_AAO:"HLF",Info:"TH klein"},
+      {Stichwort:"TH - 2",Fahrzeuge_AAO:"HLF, RW",Info:"TH mittel"},
+      {Stichwort:"TH - 3",Fahrzeuge_AAO:"ELW 1, 2x HLF, RW, TLF",Info:"TH groß"},
+      {Stichwort:"TH - VU",Fahrzeuge_AAO:"HLF, RW, RTW",Info:"Verkehrsunfall"},
+      {Stichwort:"TH - P-klemmt",Fahrzeuge_AAO:"ELW 1, HLF, RW, TLF & NEF, 2x RTW",Info:"VU P eingeklemmt"},
+      {Stichwort:"TH - Wasser",Fahrzeuge_AAO:"HLF, Boot, GW-W",Info:"Wasserrettung/-schaden"},
+      {Stichwort:"TH - Höhen/Tiefen",Fahrzeuge_AAO:"HLF, RW, Höhenretter",Info:"SRHT"},
+      {Stichwort:"TH - Gas 1",Fahrzeuge_AAO:"HLF",Info:"Gasgeruch"},
+      {Stichwort:"TH - Gas 2",Fahrzeuge_AAO:"HLF, GW-G/AB-G",Info:"Gasleitung beschädigt"},
+      // ABC
+      {Stichwort:"ABC - 1",Fahrzeuge_AAO:"HLF, GW-G",Info:"Gefahrstoff klein"},
+      {Stichwort:"ABC - 2",Fahrzeuge_AAO:"ELW 1, HLF, GW-G/AB-G, RTW",Info:"Gefahrstoff mittel"},
+      {Stichwort:"ABC - 3",Fahrzeuge_AAO:"ELW 2, 2x HLF, GW-G/AB-G, Dekon-P, Messen 2, RTW",Info:"Gefahrstoff groß"},
+      {Stichwort:"Messen 1",Fahrzeuge_AAO:"GW-Mess / KdoW (Messung)",Info:"Messtrupp klein"},
+      {Stichwort:"Messen 2",Fahrzeuge_AAO:"GW-Mess, ELW 1",Info:"Messtrupp erweitert"},
+      {Stichwort:"Dekon-P",Fahrzeuge_AAO:"Dekon-P, HLF",Info:"Dekontamination Personen"},
+      // HW (ehem. THW)
+      {Stichwort:"HW - Beleuchtung",Fahrzeuge_AAO:"HW: MzKW/GKW, Anh. Licht",Info:"Einsatzbeleuchtung"},
+      {Stichwort:"HW - Pumpen",Fahrzeuge_AAO:"HW: MzKW/GKW, Hochwasserpumpe",Info:"Wasser fördern"},
+      {Stichwort:"HW - Räumen",Fahrzeuge_AAO:"HW: Radlader/Bagger, MzKW",Info:"Räumen/Abstützen"},
+      {Stichwort:"HW - Eigensicherung",Fahrzeuge_AAO:"HW: GKW, EGS",Info:"Eigentumssicherung"},
+      {Stichwort:"HW - Logistik",Fahrzeuge_AAO:"HW: LKW K9, MTW OV",Info:"Logistik/Material"},
+      {Stichwort:"HW - Brücke",Fahrzeuge_AAO:"HW: Brückenbau-Trupp",Info:"Behelfsbrücke"},
+      {Stichwort:"HW - Fachberater",Fahrzeuge_AAO:"HW: FB OV",Info:"Fachberater HW"},
+      // RD / MANV / Sonderlagen
+      {Stichwort:"Krankentransport",Fahrzeuge_AAO:"NKTW oder RTW",Info:"Transport ohne Eile"},
+      {Stichwort:"Notfall 1",Fahrzeuge_AAO:"RTW oder NKTW",Info:"Allgemeiner Notfall"},
+      {Stichwort:"Hilflose Person",Fahrzeuge_AAO:"RTW oder NKTW",Info:"Tür öffnen/Hilfe Person"},
+      {Stichwort:"Trauma",Fahrzeuge_AAO:"RTW",Info:"Trauma ohne Polytrauma"},
+      {Stichwort:"Notfall 2",Fahrzeuge_AAO:"RTW",Info:"kritischer Notfall"},
+      {Stichwort:"Reanimation",Fahrzeuge_AAO:"RTW, NEF (ggf.)",Info:"CPR/Herzstillstand"},
+      {Stichwort:"Polytrauma",Fahrzeuge_AAO:"RTH & NEF & RTW",Info:"Schwerstverletzte"},
+      {Stichwort:"MANV-1",Fahrzeuge_AAO:"3x RTW, 2x NEF, 1x NKTW, LF KatS, LNA, San-Zug",Info:"5–9 Verletzte"},
+      {Stichwort:"MANV-2",Fahrzeuge_AAO:"+ ORGL, ELRD, Betreuungszug",Info:"10–19 Verletzte"},
+      {Stichwort:"MANV-3",Fahrzeuge_AAO:"+ ÄLRD, Versorgungszug",Info:"20–29 Verletzte"},
+      {Stichwort:"RDAZ-1",Fahrzeuge_AAO:"2x RTW/NKTW & 1x NEF",Info:"RD-Ausnahmezustand 1"},
+      {Stichwort:"AL/TL",Fahrzeuge_AAO:"2x RTW, 1x NEF, LF KatS, LNA, ORGL, San-/Betreuungs-/Führungszug",Info:"Amok/Terror"}
+    ];
     const byKey=(k)=>AAO.find(e=>e.Stichwort.toLowerCase()===(k||"").toLowerCase())||null;
-    const BRAND_SUBS={klein:["PKW","Container","Kamin","Garage","Mülltonne","Hecke"],mittel:["Wohnung","Dachstuhl","Keller","LKW","Scheune"],gross:["Industrie","Landwirtschaft","Halle","Hochhaus"]};
-    const AAO_ERHOEHUNG_GROUPS=[{title:"Lösch-/Rüstfahrzeuge",items:[{key:"(H)LF",label:"(H)LF"},{key:"TLF",label:"TLF"},{key:"RW",label:"RW"},{key:"DLK",label:"DLK"}]},{title:"Führung BF/FF",items:[{key:"ELW 1",label:"ELW 1"},{key:"ELW 2",label:"ELW 2"},{key:"KdoW A-Dienst",label:"KdoW A-Dienst"},{key:"KdoW B-Dienst",label:"KdoW B-Dienst"},{key:"KdoW C-Dienst",label:"KdoW C-Dienst"},{key:"IuK",label:"IuK"}]},{title:"Rettungsdienst & Führung RD",items:[{key:"RTW",label:"RTW"},{key:"NEF",label:"NEF"},{key:"NKTW",label:"NKTW"},{key:"ORGL",label:"ORGL (OrgL RD)"},{key:"LNA",label:"LNA"},{key:"ELRD",label:"ELRD"},{key:"ÄLRD",label:"ÄLRD"},{key:"UG-Rett",label:"UG-Rett"}]},{title:"Wasser / Gefahrgut / Messen / Dekon",items:[{key:"GW-G",label:"GW-G"},{key:"GW-W",label:"GW-W"},{key:"GW-Mess",label:"GW-Mess"},{key:"Dekon-P",label:"Dekon-P"}]},{title:"HW",items:[{key:"HW GKW/MzKW",label:"HW GKW/MzKW"},{key:"HW Anh. Licht",label:"HW Anh. Licht"},{key:"HW Hochwasserpumpe",label:"HW Hochwasserpumpe"},{key:"HW Räumen (Bagger/Radlader)",label:"HW Räumen"},{key:"HW Logistik (LKW/MTW OV)",label:"HW Logistik"},{key:"HW Brückenbau",label:"HW Brückenbau"},{key:"HW Fachberater",label:"HW Fachberater"}]}];
+
+    const BRAND_SUBS={
+      klein:["PKW","Container","Kamin","Garage","Mülltonne","Hecke"],
+      mittel:["Wohnung","Dachstuhl","Keller","LKW","Scheune"],
+      gross:["Industrie","Landwirtschaft","Halle","Hochhaus"]
+    };
+
+    const AAO_ERHOEHUNG_GROUPS=[
+      {title:"Lösch-/Rüstfahrzeuge",items:[{key:"(H)LF",label:"(H)LF"},{key:"TLF",label:"TLF"},{key:"RW",label:"RW"},{key:"DLK",label:"DLK"}]},
+      {title:"Führung BF/FF",items:[{key:"ELW 1",label:"ELW 1"},{key:"ELW 2",label:"ELW 2"},{key:"KdoW A-Dienst",label:"KdoW A-Dienst"},{key:"KdoW B-Dienst",label:"KdoW B-Dienst"},{key:"KdoW C-Dienst",label:"KdoW C-Dienst"},{key:"IuK",label:"IuK"}]},
+      {title:"Rettungsdienst & Führung RD",items:[{key:"RTW",label:"RTW"},{key:"NEF",label:"NEF"},{key:"NKTW",label:"NKTW"},{key:"ORGL",label:"ORGL (OrgL RD)"},{key:"LNA",label:"LNA"},{key:"ELRD",label:"ELRD"},{key:"ÄLRD",label:"ÄLRD"},{key:"UG-Rett",label:"UG-Rett"}]},
+      {title:"Wasser / Gefahrgut / Messen / Dekon",items:[{key:"GW-G",label:"GW-G"},{key:"GW-W",label:"GW-W"},{key:"GW-Mess",label:"GW-Mess"},{key:"Dekon-P",label:"Dekon-P"}]},
+      {title:"HW",items:[{key:"HW GKW/MzKW",label:"HW GKW/MzKW"},{key:"HW Anh. Licht",label:"HW Anh. Licht"},{key:"HW Hochwasserpumpe",label:"HW Hochwasserpumpe"},{key:"HW Räumen (Bagger/Radlader)",label:"HW Räumen"},{key:"HW Logistik (LKW/MTW OV)",label:"HW Logistik"},{key:"HW Brückenbau",label:"HW Brückenbau"},{key:"HW Fachberater",label:"HW Fachberater"}]}
+    ];
+
     const RD_SUBS=["Krankentransport","Notfall 1","Hilflose Person","Trauma","Notfall 2","Reanimation","Polytrauma"];
     const TH_LIST=AAO.filter(e=>e.Stichwort.startsWith("TH - ")).map(e=>e.Stichwort);
     const ABC_LIST=AAO.filter(e=>e.Stichwort.startsWith("ABC")).map(e=>e.Stichwort).concat(["Messen 1","Messen 2","Dekon-P"]);
     const BMA_LIST=["BMA","BMA - Industrie","Heimrauchmelder","CO-Melder"];
     const HW_LIST=AAO.filter(e=>e.Stichwort.startsWith("HW - ")).map(e=>e.Stichwort);
 
+    /* === Utils === */
     const num=(v)=>typeof v==="number"?v:(v===""?0:Number(v));
-    function brandCodeAndText(fireSize,persons){const p=num(persons);if(p>=3)return{code:"B4Y",text:""};if(p===2)return{code:"B3Y",text:""};if(p===1)return{code:"B2Y",text:""};if(fireSize==="mittel")return{code:"B2",text:"Mittel"};if(fireSize==="gross")return{code:"B3",text:"Groß"};return{code:"B1",text:"Klein"}}
+    function brandCodeAndText(fireSize,persons){
+      const p=num(persons);
+      if(p>=3)return{code:"B4Y",text:""};
+      if(p===2)return{code:"B3Y",text:""};
+      if(p===1)return{code:"B2Y",text:""};
+      if(fireSize==="mittel")return{code:"B2",text:"Mittel"};
+      if(fireSize==="gross")return{code:"B3",text:"Groß"};
+      return{code:"B1",text:"Klein"};
+    }
     const niceExtra=(x)=>({PKW:"PKW-Brand",Container:"Containerbrand",Kamin:"Kaminbrand",Garage:"Garagenbrand",Mülltonne:"Mülltonnenbrand",Hecke:"Heckenbrand",Wohnung:"Wohnungsbrand",Dachstuhl:"Dachstuhlbrand",Keller:"Kellerbrand",LKW:"LKW-Brand",Industrie:"Industriebrand",Landwirtschaft:"Landwirtschaftsbrand",Halle:"Hallenbrand",Hochhaus:"Hochhausbrand"}[x]||x);
 
     function pickAAO(a){
@@ -87,14 +163,45 @@
       }
       return null;
     }
+
+    function manvFromPersons(n){const v=Number(n||0);if(v>=20)return"MANV-3";if(v>=10)return"MANV-2";if(v>=5)return"MANV-1";return"";}
+
     function increaseListFromCounts(c){return Object.entries(c).filter(([,n])=>n>0).map(([k,n])=>`+${n} ${k}`)}
-    function buildVehiclesWithIncrease(base,counts){const incList=increaseListFromCounts(counts);const inc=incList.length?" + "+incList.join(", "):"";return(base||"(offen)")+inc}
-    function buildMail(a,entry,incCounts){
+    function combineVehicles(base,extra){if(!extra)return base||"(offen)";const ex=extra.Fahrzeuge_AAO||"";return(base||"(offen)")+(ex?` + ${ex}`:"")}
+    function combineVehiclesMulti(base,extras){return extras.reduce((acc,e)=>combineVehicles(acc,e),base||"(offen)")}
+
+    function buildMail(a, entry, incCounts, extras, infoFlags){
       const brandExtraLines=(a.category==="Brand")?(BRAND_SUBS[a.fireSize]||[]).map(x=>`Brand-Zusatz – ${x}: ${a.brandExtras.includes(x)?"Ja":"Nein"}`):[];
       const incList=increaseListFromCounts(incCounts);
       const increaseLines=(incList.length?["AAO-Erhöhung: "+incList.join(", ")] : []);
-      const lines=[`Stichwort: ${entry?entry.Stichwort:"(offen)"}`,`AAO Fahrzeuge: ${buildVehiclesWithIncrease(entry?.Fahrzeuge_AAO,incCounts)}`,`Info: ${(entry&&entry.Info)?entry.Info:"(keine)"} `,`—`,`Melder: ${a.callerName||"(unbekannt)"}`,`Rückruf: ${a.callbackNumber||"(unbekannt)"}`,`Adresse/PLZ: ${a.location||"(unbekannt)"}`,`Details: ${a.details||"(keine)"}`,`Kategorie: ${a.category||"(unbekannt)"}`,`Personen in Gefahr/Verletzt: ${a.personsInDanger===""?"(unbekannt)":a.personsInDanger}`,`Bewusst/Atmung (nur RD): ${a.unconscious}/${a.breathing}`,`Brandgröße (nur Brand): ${a.fireSize||"(k.A.)"}`,`TH-Stichwort: ${a.thType||"(k.A.)"}`,`BMA-Typ: ${a.bmaType||"(k.A.)"}`,`ABC-Typ: ${a.abcType||"(k.A.)"}`,`HW-Typ: ${a.thwType||"(k.A.)"}`,`RD-Unterstichwort: ${a.rdSub||"(k.A.)"}`,...(brandExtraLines.length?["—",...brandExtraLines]:[]),...(increaseLines.length?["—",...increaseLines]:[])];
-      const subject=entry?entry.Stichwort:"Voranfrage";const body=lines.join("\n");const mailto=`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;return{subject,body,mailto};
+      const extraStw=extras.map(e=>e.Stichwort).join(" + ");
+      const lines=[
+        `Stichwort: ${entry ? entry.Stichwort : "(offen)"}${extraStw? " + " + extraStw : ""}`,
+        `AAO Fahrzeuge: ${buildVehiclesWithIncrease(combineVehiclesMulti(entry?.Fahrzeuge_AAO, extras), incCounts)}`,
+        `Info: ${(entry && entry.Info) ? entry.Info : "(keine)"} `,
+        `—`,
+        `Melder: ${a.callerName || "(unbekannt)"}`,
+        `Rückruf: ${a.callbackNumber || "(unbekannt)"}`,
+        `Adresse/PLZ: ${a.location || "(unbekannt)"}`,
+        `Details: ${a.details || "(keine)"}`,
+        `Kategorie: ${a.category || "(unbekannt)"}`,
+        `Personen in Gefahr/Verletzt: ${a.personsInDanger === "" ? "(unbekannt)" : a.personsInDanger}`,
+        `Bewusst/Atmung (nur RD): ${a.unconscious}/${a.breathing}`,
+        `Brandgröße (nur Brand): ${a.fireSize || "(k.A.)"}`,
+        `TH-Stichwort: ${a.thType || "(k.A.)"}`,
+        `BMA-Typ: ${a.bmaType || "(k.A.)"}`,
+        `ABC-Typ: ${a.abcType || "(k.A.)"}`,
+        `HW-Typ: ${a.thwType || "(k.A.)"}`,
+        `RD-Unterstichwort: ${a.rdSub || "(k.A.)"}`,
+        ...(extraStw ? [`Sonderlagen: ${extraStw}`] : []),
+        ...(infoFlags.length ? [`Weitere Hinweise: ${infoFlags.join(", ")}`] : []),
+        ...(brandExtraLines.length?["—",...brandExtraLines]:[]),
+        ...(increaseLines.length?["—",...increaseLines]:[]),
+      ];
+      const subject=(entry ? entry.Stichwort : "Voranfrage")+(extraStw? " + "+extraStw:"");
+      const body=lines.join("\n");
+      const mailto=`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      return{subject,body,mailto};
     }
 
     function validate(a){
@@ -112,9 +219,16 @@
         case"Rettungsdienst":if(!a.rdSub&&!(a.details&&a.details.trim().length>2))errors.push({key:"rdSub",msg:"RD-Unterstichwort wählen oder Details angeben.",block:false});break;
         case"MANV/Sonderlage":if(a.personsInDanger===""||Number(a.personsInDanger)<=0)errors.push({key:"personsInDanger",msg:"Anzahl Verletzte/Betroffene angeben (>0).",block:true});break;
       }
-      const map=Object.fromEntries(errors.map(e=>[e.key,e]));return{errors,map};
+      // Sonderlagen (manuell)
+      if(a.manvActive && !a.manvAuto){
+        if(!a.manvLevel)errors.push({key:"manvLevel",msg:"Bitte MANV-Level wählen (oder Automatik aktivieren).",block:true});
+      }
+      const map=Object.fromEntries(errors.map(e=>[e.key,e]));
+      const hasBlock=errors.some(e=>e.block);
+      return{errors,map,hasBlock};
     }
 
+    /* === UI Mini-Bausteine === */
     const LabeledInput=({label,value,onChange,type="text",invalid=false,help=""})=>(
       <label className="block"><span className="block text-sm font-medium mb-1">{label}</span>
       <input type={type} className={`w-full border rounded-xl p-2 ${invalid?'invalid':''}`} value={value} onChange={(e)=>onChange(e.target.value)} aria-invalid={invalid}/>
@@ -129,6 +243,7 @@
       <textarea className={`w-full border rounded-xl p-2 ${invalid?'invalid':''}`} rows={rows} value={value} onChange={(e)=>onChange(e.target.value)} aria-invalid={invalid}/>
       {invalid&&<div className="text-xs text-red-400 mt-1">{help}</div>}</label>);
 
+    // Schwarzes Dropdown (Custom Select)
     const Select=({label,value,options,onChange,invalid=false,help=""})=>{
       const[open,setOpen]=useState(false);const btnRef=React.useRef(null);const menuRef=React.useRef(null);
       const idx=Math.max(0,options.findIndex(o=>o===value));const[active,setActive]=useState(idx);
@@ -160,179 +275,358 @@
       </label>);
     };
 
-    function Section({title,hint,children}){return(<div className="subcard mb-3"><div className="subhead"><span>{title}</span>{hint&&<span className="hint-sm">· {hint}</span>}</div>{children}</div>)}
+    const Section=({title,hint,children})=>(<div className="subcard mb-3"><div className="subhead"><span>{title}</span>{hint&&<span className="hint-sm">· {hint}</span>}</div>{children}</div>);
     const Row=({label,value,multiline=false,children})=>(<div><div className="text-xs text-slate-400 flex items-center justify-between"><span>{label}</span>{children}</div>{multiline?<div className="text-sm whitespace-pre-line">{value}</div>:<div className="text-sm">{value}</div>}</div>);
 
+    /* === App === */
     function App(){
-      const initialState={category:"",personsInDanger:"",unconscious:"unbekannt",breathing:"unbekannt",fireSize:"",brandExtras:[],thType:"",bmaType:"",abcType:"",thwType:"",rdSub:"",details:"",callerName:"",callbackNumber:"",location:""};
+      const initialState={
+        category:"",personsInDanger:"",unconscious:"unbekannt",breathing:"unbekannt",
+        fireSize:"",brandExtras:[],thType:"",bmaType:"",abcType:"",thwType:"",rdSub:"",
+        details:"",callerName:"",callbackNumber:"",location:"",
+        // Sonderlagen
+        manvActive:false,manvAuto:true,manvLevel:"",
+        rdazActive:false,altlActive:false, cbrnActive:false, evacuationActive:false
+      };
       const[a,setA]=useState(initialState);
+
+      // AAO-Erhöhung
       const[incCounts,setIncCounts]=useState({});
       const incPlus=k=>setIncCounts(s=>({...s,[k]:Math.max(0,(s[k]||0)+1)}));
       const incMinus=k=>setIncCounts(s=>({...s,[k]:Math.max(0,(s[k]||0)-1)}));
       const incReset=()=>setIncCounts({});
+
       const setField=(k,v)=>setA(s=>({...s,[k]:v}));
       const {errors,map}=useMemo(()=>validate(a),[a]);
+
       const entry=useMemo(()=>pickAAO(a),[a]);
-      const mail=useMemo(()=>buildMail(a,entry,incCounts),[a,entry,incCounts]);
-      const displayStichwort=useMemo(()=>{if(a.category!=="Brand")return entry?.Stichwort||"(nicht bestimmt)";const {code,text}=brandCodeAndText(a.fireSize,a.personsInDanger);const ex=a.brandExtras||[];return ex.length?`${code} ${ex.map(niceExtra).join(" / ")}`:(text?`${code} ${text}`:code)},[a,entry]);
-      const alarm=useMemo(()=>{const parts=[];if(a.category==="Brand"){const {code,text}=brandCodeAndText(a.fireSize,a.personsInDanger);const extras=(a.brandExtras||[]);parts.push(extras.length?`${code} ${extras.map(niceExtra).join(" / ")}`:(text?`${code} ${text}`:code))}else{parts.push(entry?.Stichwort||"(Stichwort)")}if(a.location)parts.push(a.location);const p=num(a.personsInDanger);if(p>0)parts.push(`P:${p}`);if(a.category==="Technische Hilfe"&&a.thType)parts.push(`TH:${a.thType}`);if(a.category==="BMA"&&a.bmaType)parts.push(`BMA:${a.bmaType}`);if(a.category==="ABC"&&a.abcType)parts.push(`ABC:${a.abcType}`);if(a.category==="HW"&&a.thwType)parts.push(`HW:${a.thwType}`);if(a.category==="Rettungsdienst"){if(a.rdSub)parts.push(`RD:${a.rdSub}`);if(a.unconscious!=="unbekannt")parts.push(`Bew:${a.unconscious}`);if(a.breathing!=="unbekannt")parts.push(`Atm:${a.breathing}`)}const incList=increaseListFromCounts(incCounts);if(incList.length)parts.push("E: "+incList.join(", "));const det=(a.details||"").trim();if(det)parts.push(det.slice(0,60));if(a.callbackNumber)parts.push(`RK:${a.callbackNumber}`);if(a.callerName)parts.push(`M:${a.callerName}`);let text=parts.filter(Boolean).join(" | ").replace(/\s+/g," ").trim();if(text.length>160)text=text.slice(0,159)+"…";return text},[a,entry,incCounts]);
+
+      // MANV-Schlüssel
+      const manvKey=useMemo(()=>{
+        if(!a.manvActive)return"";
+        if(a.manvAuto)return manvFromPersons(a.personsInDanger);
+        return a.manvLevel||"";
+      },[a.manvActive,a.manvAuto,a.manvLevel,a.personsInDanger]);
+      const manvEntry=useMemo(()=>manvKey?byKey(manvKey):null,[manvKey]);
+
+      // Weitere Sonderlagen, die echte AAO haben (werden kombiniert)
+      const extraEntries=useMemo(()=>{
+        const list=[];
+        if(a.rdazActive) { const e=byKey("RDAZ-1"); if(e) list.push(e); }
+        if(a.altlActive) { const e=byKey("AL/TL");  if(e) list.push(e); }
+        if(manvEntry) list.push(manvEntry);
+        return list;
+      },[a.rdazActive,a.altlActive,manvEntry]);
+
+      // Info-Flags (nur Hinweis, keine AAO)
+      const infoFlags=useMemo(()=>{
+        const f=[];
+        if(a.cbrnActive)f.push("CBRN-/Gefahrstoff-Lage");
+        if(a.evacuationActive)f.push("Evakuierung");
+        return f;
+      },[a.cbrnActive,a.evacuationActive]);
+
+      const mail=useMemo(()=>buildMail(a,entry,incCounts,extraEntries,infoFlags),[a,entry,incCounts,extraEntries,infoFlags]);
+
+      const displayStichwort=useMemo(()=>{
+        let base="";
+        if(a.category!=="Brand"){
+          base=entry?.Stichwort||"(nicht bestimmt)";
+        }else{
+          const {code,text}=brandCodeAndText(a.fireSize,a.personsInDanger);
+          const ex=a.brandExtras||[];
+          base=ex.length?`${code} ${ex.map(niceExtra).join(" / ")}`:(text?`${code} ${text}`:code);
+        }
+        const extraTxt=extraEntries.map(e=>e.Stichwort).join(" + ");
+        if(extraTxt) base+=` + ${extraTxt}`;
+        return base;
+      },[a,entry,extraEntries]);
+
+      const alarm=useMemo(()=>{
+        const parts=[];
+        // Grundstichwort
+        if(a.category==="Brand"){
+          const {code,text}=brandCodeAndText(a.fireSize,a.personsInDanger);
+          const extras=(a.brandExtras||[]);
+          parts.push(extras.length?`${code} ${extras.map(niceExtra).join(" / ")}`:(text?`${code} ${text}`:code));
+        }else{
+          parts.push(entry?.Stichwort||"(Stichwort)");
+        }
+        // Sonderlagen mit Stichwort
+        extraEntries.forEach(e=>parts.push(e.Stichwort));
+        // Ort, Personen, Details
+        if(a.location)parts.push(a.location);
+        const p=num(a.personsInDanger);if(p>0)parts.push(`P:${p}`);
+        if(a.category==="Technische Hilfe"&&a.thType)parts.push(`TH:${a.thType}`);
+        if(a.category==="BMA"&&a.bmaType)parts.push(`BMA:${a.bmaType}`);
+        if(a.category==="ABC"&&a.abcType)parts.push(`ABC:${a.abcType}`);
+        if(a.category==="HW"&&a.thwType)parts.push(`HW:${a.thwType}`);
+        if(a.category==="Rettungsdienst"){
+          if(a.rdSub)parts.push(`RD:${a.rdSub}`);
+          if(a.unconscious!=="unbekannt")parts.push(`Bew:${a.unconscious}`);
+          if(a.breathing!=="unbekannt")parts.push(`Atm:${a.breathing}`);
+        }
+        // Info-Flags
+        infoFlags.forEach(t=>parts.push(t));
+        // Erhöhung
+        const incList=increaseListFromCounts(incCounts);
+        if(incList.length)parts.push("E: "+incList.join(", "));
+        const det=(a.details||"").trim();if(det)parts.push(det.slice(0,60));
+        if(a.callbackNumber)parts.push(`RK:${a.callbackNumber}`);
+        if(a.callerName)parts.push(`M:${a.callerName}`);
+        let textOut=parts.filter(Boolean).join(" | ").replace(/\s+/g," ").trim();
+        if(textOut.length>160)textOut=textOut.slice(0,159)+"…";
+        return textOut;
+      },[a,entry,extraEntries,infoFlags,incCounts]);
+
       const copy=async(t)=>{try{await navigator.clipboard.writeText(t||"")}catch{}};
-      const resetAll=()=>{setA(initialState);incReset()};
+      const resetAll=()=>{setA(initialState);setIncCounts({});};
 
-      return(<div className="min-h-screen p-6"><div className="mx-auto max-w-6xl">
-        <div className="flex items-center justify-between"><h1 className="text-2xl font-bold tracking-tight">Notrufabfrage • AAO</h1><div className="flex gap-2"><button className="btn" onClick={resetAll}>Reset</button></div></div>
-        {errors.length>0&&(<div className="mt-3 mb-2 p-3 card"><div className="font-semibold text-red-400 mb-1">Bitte prüfen ({errors.length}):</div><ul className="list-disc pl-5 text-sm text-red-300">{errors.map((e,i)=><li key={i}>{e.msg}</li>)}</ul></div>)}
-        <div className="grid lg:grid-cols-3 gap-4 mt-3">
-          {/* Eingabemaske */}
-          <section className="lg:col-span-2 card p-4">
-            <h2 className="font-semibold mb-3">Einsatzdaten</h2>
+      /* === UI === */
+      return(<div className="min-h-screen p-6">
+        <div className="mx-auto max-w-6xl">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold tracking-tight">Notrufabfrage • AAO</h1>
+            <div className="flex gap-2">
+              <button className="btn" onClick={resetAll}>Reset</button>
+            </div>
+          </div>
 
-            <Section title="Kategorie wählen" hint="Bestimmt die weiteren Felder">
-              <div className="grid2">
-                <Select label={<span className="req">Kategorie</span>} value={a.category} onChange={(v)=>setField("category",v)}
-                        options={["","Brand","BMA","Technische Hilfe","ABC","HW","Rettungsdienst","MANV/Sonderlage"]}
-                        invalid={!!map.category} help={map.category?.msg}/>
-                <LabeledInput label="Kurzlage (optional)" value={a.details} onChange={(v)=>setField("details",v)}/>
-              </div>
-              <div className="hint-sm">Tipp: Erst Kategorie, dann Details – erspart spätere Änderungen.</div>
-            </Section>
+          {errors.length>0&&(
+            <div className="mt-3 mb-2 p-3 card">
+              <div className="font-semibold text-red-400 mb-1">Bitte prüfen ({errors.length}):</div>
+              <ul className="list-disc pl-5 text-sm text-red-300">{errors.map((e,i)=><li key={i}>{e.msg}</li>)}</ul>
+            </div>
+          )}
 
-            {a.category==="Brand"&&(<Section title="Brand" hint="Größe & Zusatzstichwörter">
-              <div className="grid3">
-                <Select label={<span className="req">Brandgröße</span>} value={a.fireSize} onChange={(v)=>setField("fireSize",v)}
-                        options={["","klein","mittel","gross"]} invalid={!!map.fireSize} help={map.fireSize?.msg}/>
-                <NumberInput label="Personen in Gefahr" value={a.personsInDanger} onChange={(v)=>setField("personsInDanger",v)}
-                             invalid={!!map.personsInDanger} help={map.personsInDanger?.msg}/>
-                <LabeledInput label="Objekt (z. B. Wohnung, Lagerhalle)" value={a.details} onChange={(v)=>setField("details",v)}/>
-              </div>
-              <div className="divider"></div>
-              <div className="subhead">Zusatz-Stichworte</div>
-              {(BRAND_SUBS[a.fireSize]||[]).length===0?(<div className="hint-sm">Bitte zuerst die Brandgröße wählen.</div>):(
-                <div className="flex flex-wrap gap-2">
-                  {(BRAND_SUBS[a.fireSize]||[]).map(x=>(
-                    <label key={x} className="inline-flex items-center gap-2 mr-3">
-                      <input type="checkbox" className="w-4 h-4"
-                        checked={a.brandExtras.includes(x)}
-                        onChange={()=>{const set=new Set(a.brandExtras.filter(e=>(BRAND_SUBS[a.fireSize]||[]).includes(e)));set.has(x)?set.delete(x):set.add(x);setField("brandExtras",[...set])}}/>
-                      <span className="text-sm">{x}</span>
-                    </label>
-                  ))}
+          <div className="grid lg:grid-cols-3 gap-4 mt-3">
+            {/* Eingabemaske */}
+            <section className="lg:col-span-2 card p-4">
+              <h2 className="font-semibold mb-3">Einsatzdaten</h2>
+
+              <Section title="Kategorie wählen" hint="Bestimmt die weiteren Felder">
+                <div className="grid2">
+                  <Select label={<span className="req">Kategorie</span>} value={a.category} onChange={(v)=>setField("category",v)}
+                          options={["","Brand","BMA","Technische Hilfe","ABC","HW","Rettungsdienst","MANV/Sonderlage"]}
+                          invalid={!!map.category} help={map.category?.msg}/>
+                  <LabeledInput label="Kurzlage (optional)" value={a.details} onChange={(v)=>setField("details",v)}/>
                 </div>
-              )}
-            </Section>)}
+                <div className="hint-sm">Tipp: Erst Kategorie, dann Details – erspart spätere Änderungen.</div>
+              </Section>
 
-            {a.category==="BMA"&&(<Section title="Brandmeldeanlage" hint="BMA-Typ & Objekt">
-              <div className="grid3">
-                <Select label={<span className="req">BMA-Typ</span>} value={a.bmaType} onChange={(v)=>setField("bmaType",v)}
-                        options={["",...BMA_LIST]} invalid={!!map.bmaType} help={map.bmaType?.msg}/>
-                <NumberInput label="Personen gefährdet (optional)" value={a.personsInDanger} onChange={(v)=>setField("personsInDanger",v)}
-                             invalid={!!map.personsInDanger} help={map.personsInDanger?.msg}/>
-                <LabeledInput label="Objekt (z. B. Schule, Industrie…)" value={a.details} onChange={(v)=>setField("details",v)}/>
-              </div>
-            </Section>)}
-
-            {a.category==="Technische Hilfe"&&(<Section title="Technische Hilfe" hint="Stichwort & Details">
-              <div className="grid3">
-                <Select label={<span className="req">TH-Stichwort</span>} value={a.thType} onChange={(v)=>setField("thType",v)}
-                        options={["",...TH_LIST]} invalid={!!map.thType} help={map.thType?.msg}/>
-                <NumberInput label="Betroffene (optional)" value={a.personsInDanger} onChange={(v)=>setField("personsInDanger",v)}
-                             invalid={!!map.personsInDanger} help={map.personsInDanger?.msg}/>
-                <LabeledInput label="Details" value={a.details} onChange={(v)=>setField("details",v)}/>
-              </div>
-            </Section>)}
-
-            {a.category==="ABC"&&(<Section title="ABC" hint="Gefahrstoff & Maßnahmen">
-              <div className="grid3">
-                <Select label={<span className="req">ABC-Stichwort</span>} value={a.abcType} onChange={(v)=>setField("abcType",v)}
-                        options={["",...ABC_LIST]} invalid={!!map.abcType} help={map.abcType?.msg}/>
-                <NumberInput label="Betroffene (optional)" value={a.personsInDanger} onChange={(v)=>setField("personsInDanger",v)}
-                             invalid={!!map.personsInDanger} help={map.personsInDanger?.msg}/>
-                <LabeledInput label="Gefahrstoff/UN-Nr. (optional)" value={a.details} onChange={(v)=>setField("details",v)}/>
-              </div>
-            </Section>)}
-
-            {a.category==="HW"&&(<Section title="HW (ehem. THW)" hint="Auftrag & Lage">
-              <div className="grid3">
-                <Select label={<span className="req">HW-Auftrag</span>} value={a.thwType} onChange={(v)=>setField("thwType",v)}
-                        options={["",...HW_LIST]} invalid={!!map.thwType} help={map.thwType?.msg}/>
-                <NumberInput label="Betroffene (optional)" value={a.personsInDanger} onChange={(v)=>setField("personsInDanger",v)}
-                             invalid={!!map.personsInDanger} help={map.personsInDanger?.msg}/>
-                <LabeledInput label="Lage/Objekt" value={a.details} onChange={(v)=>setField("details",v)}/>
-              </div>
-            </Section>)}
-
-            {a.category==="Rettungsdienst"&&(<Section title="Rettungsdienst" hint="Unterstichwort & Zustand">
-              <div className="grid3">
-                <Select label="RD-Unterstichwort" value={a.rdSub} onChange={(v)=>setField("rdSub",v)}
-                        options={["",...RD_SUBS]} invalid={!!map.rdSub} help={map.rdSub?.msg}/>
-                <Select label="Bewusstlos?" value={a.unconscious} onChange={(v)=>setField("unconscious",v)} options={["unbekannt","ja","nein"]}/>
-                <Select label="Atmung vorhanden?" value={a.breathing} onChange={(v)=>setField("breathing",v)} options={["unbekannt","ja","nein"]}/>
-              </div>
-              <div className="grid2 mt-2">
-                <NumberInput label="Betroffene/Verletzte" value={a.personsInDanger} onChange={(v)=>setField("personsInDanger",v)}
-                             invalid={!!map.personsInDanger} help={map.personsInDanger?.msg}/>
-                <LabeledInput label="Details" value={a.details} onChange={(v)=>setField("details",v)}/>
-              </div>
-            </Section>)}
-
-            <Section title="Einsatzort & Melder" hint="Pflichtfelder rot markiert">
-              <div className="grid2">
-                <LabeledInput label={<span className="req">Adresse/PLZ</span>} value={a.location} onChange={(v)=>setField("location",v)}
-                              invalid={!!map.location} help={map.location?.msg}/>
-                <LabeledInput label="Rückrufnummer" value={a.callbackNumber} onChange={(v)=>setField("callbackNumber",v)}
-                              invalid={!!map.callbackNumber} help={map.callbackNumber?.msg}/>
-              </div>
-              <div className="grid2">
-                <LabeledInput label="Melder-Name" value={a.callerName} onChange={(v)=>setField("callerName",v)}/>
-                <LabeledInput label="Hinweise (optional)" value={a.details} onChange={(v)=>setField("details",v)}/>
-              </div>
-            </Section>
-
-            <Section title="AAO-Erhöhung (Zusatzkräfte)" hint="Optional – Zähler je Ressource">
-              <div className="hint-sm mb-2">Klicke „+“/„−“. Mit „Erhöhung zurücksetzen“ leerst du alle Zähler.</div>
-              <div className="divider"></div>
-              {AAO_ERHOEHUNG_GROUPS.map(group=>(
-                <div key={group.title} className="mb-3">
-                  <div className="text-xs font-semibold text-slate-300 mb-1">{group.title}</div>
+              {a.category==="Brand"&&(<Section title="Brand" hint="Größe & Zusatzstichwörter">
+                <div className="grid3">
+                  <Select label={<span className="req">Brandgröße</span>} value={a.fireSize} onChange={(v)=>setField("fireSize",v)}
+                          options={["","klein","mittel","gross"]} invalid={!!map.fireSize} help={map.fireSize?.msg}/>
+                  <NumberInput label="Personen in Gefahr" value={a.personsInDanger} onChange={(v)=>setField("personsInDanger",v)}
+                               invalid={!!map.personsInDanger} help={map.personsInDanger?.msg}/>
+                  <LabeledInput label="Objekt (z. B. Wohnung, Lagerhalle)" value={a.details} onChange={(v)=>setField("details",v)}/>
+                </div>
+                <div className="divider"></div>
+                <div className="subhead">Zusatz-Stichworte</div>
+                {(BRAND_SUBS[a.fireSize]||[]).length===0?(<div className="hint-sm">Bitte zuerst die Brandgröße wählen.</div>):(
                   <div className="flex flex-wrap gap-2">
-                    {group.items.map(({key,label})=>(
-                      <div key={key} className="qty">
-                        <button type="button" onClick={()=>incMinus(key)} aria-label={`- ${label}`}>−</button>
-                        <span className="text-sm min-w-[1.5rem] text-center">{incCounts[key]||0}</span>
-                        <button type="button" onClick={()=>incPlus(key)} aria-label={`+ ${label}`}>+</button>
-                        <span className="text-sm ml-1">{label}</span>
-                      </div>
+                    {(BRAND_SUBS[a.fireSize]||[]).map(x=>(
+                      <label key={x} className="inline-flex items-center gap-2 mr-3">
+                        <input type="checkbox" className="w-4 h-4"
+                          checked={a.brandExtras.includes(x)}
+                          onChange={()=>{const set=new Set(a.brandExtras.filter(e=>(BRAND_SUBS[a.fireSize]||[]).includes(e)));set.has(x)?set.delete(x):set.add(x);setField("brandExtras",[...set])}}/>
+                        <span className="text-sm">{x}</span>
+                      </label>
                     ))}
                   </div>
-                </div>
-              ))}
-              <div className="mt-2"><button type="button" className="btn" onClick={()=>incReset()}>Erhöhung zurücksetzen</button></div>
-            </Section>
-          </section>
+                )}
+              </Section>)}
 
-          {/* Ergebnis */}
-          <section className="lg:col-span-1 card p-4">
-            <h2 className="font-semibold mb-3">Ergebnis</h2>
-            <Row label="Stichwort" value={displayStichwort}><button className="btn text-xs" onClick={()=>copy(displayStichwort)}>Kopieren</button></Row>
-            <Row label="Fahrzeuge" value={buildVehiclesWithIncrease(entry?.Fahrzeuge_AAO,incCounts)}><button className="btn text-xs" onClick={()=>copy(buildVehiclesWithIncrease(entry?.Fahrzeuge_AAO,incCounts))}>Kopieren</button></Row>
-            <Row label="Info" value={(entry?.Info)||"(keine)"} multiline/>
-            {a.category==="Brand"&&(<div className="mt-3">
-              <div className="text-xs text-slate-400 flex items-center justify-between"><span>Ausgewählte Brand-Zusätze</span><button className="btn text-xs" onClick={()=>copy((a.brandExtras||[]).join(", "))}>Kopieren</button></div>
-              <div className="mt-1 flex flex-wrap gap-1">{(BRAND_SUBS[a.fireSize]||[]).map(x=>(<span key={x} className="badge">{x}: {a.brandExtras.includes(x)?"Ja":"Nein"}</span>))}</div>
-            </div>)}
-            <div className="border-t border-slate-700 my-3"/>
-            <h3 className="font-medium mb-1 flex items-center justify-between"><span>Alarmtext (Melder) <span className="text-xs text-slate-400">({(alarm||"").length}/160)</span></span><button className="btn text-xs" onClick={()=>copy(alarm)}>Kopieren</button></h3>
-            <textarea className="w-full rounded-2xl p-2 text-sm" rows="4" readOnly value={alarm}/>
-            <div className="border-t border-slate-700 my-3"/>
-            <h3 className="font-medium mb-1 flex items-center justify-between"><span>Mailer</span><div className="flex gap-2"><a href={mail.mailto} className="btn bg-blue-600 text-white text-xs">In E-Mail öffnen</a><button className="btn text-xs" onClick={()=>copy(mail.body)}>Kopieren</button></div></h3>
-            <textarea className="w-full rounded-2xl p-2 text-sm" rows="10" readOnly value={mail.body}/>
-          </section>
+              {a.category==="BMA"&&(<Section title="Brandmeldeanlage" hint="BMA-Typ & Objekt">
+                <div className="grid3">
+                  <Select label={<span className="req">BMA-Typ</span>} value={a.bmaType} onChange={(v)=>setField("bmaType",v)}
+                          options={["",...BMA_LIST]} invalid={!!map.bmaType} help={map.bmaType?.msg}/>
+                  <NumberInput label="Personen gefährdet (optional)" value={a.personsInDanger} onChange={(v)=>setField("personsInDanger",v)}
+                               invalid={!!map.personsInDanger} help={map.personsInDanger?.msg}/>
+                  <LabeledInput label="Objekt (z. B. Schule, Industrie…)" value={a.details} onChange={(v)=>setField("details",v)}/>
+                </div>
+              </Section>)}
+
+              {a.category==="Technische Hilfe"&&(<Section title="Technische Hilfe" hint="Stichwort & Details">
+                <div className="grid3">
+                  <Select label={<span className="req">TH-Stichwort</span>} value={a.thType} onChange={(v)=>setField("thType",v)}
+                          options={["",...TH_LIST]} invalid={!!map.thType} help={map.thType?.msg}/>
+                  <NumberInput label="Betroffene (optional)" value={a.personsInDanger} onChange={(v)=>setField("personsInDanger",v)}
+                               invalid={!!map.personsInDanger} help={map.personsInDanger?.msg}/>
+                  <LabeledInput label="Details" value={a.details} onChange={(v)=>setField("details",v)}/>
+                </div>
+              </Section>)}
+
+              {a.category==="ABC"&&(<Section title="ABC" hint="Gefahrstoff & Maßnahmen">
+                <div className="grid3">
+                  <Select label={<span className="req">ABC-Stichwort</span>} value={a.abcType} onChange={(v)=>setField("abcType",v)}
+                          options={["",...ABC_LIST]} invalid={!!map.abcType} help={map.abcType?.msg}/>
+                  <NumberInput label="Betroffene (optional)" value={a.personsInDanger} onChange={(v)=>setField("personsInDanger",v)}
+                               invalid={!!map.personsInDanger} help={map.personsInDanger?.msg}/>
+                  <LabeledInput label="Gefahrstoff/UN-Nr. (optional)" value={a.details} onChange={(v)=>setField("details",v)}/>
+                </div>
+              </Section>)}
+
+              {a.category==="HW"&&(<Section title="HW (ehem. THW)" hint="Auftrag & Lage">
+                <div className="grid3">
+                  <Select label={<span className="req">HW-Auftrag</span>} value={a.thwType} onChange={(v)=>setField("thwType",v)}
+                          options={["",...HW_LIST]} invalid={!!map.thwType} help={map.thwType?.msg}/>
+                  <NumberInput label="Betroffene (optional)" value={a.personsInDanger} onChange={(v)=>setField("personsInDanger",v)}
+                               invalid={!!map.personsInDanger} help={map.personsInDanger?.msg}/>
+                  <LabeledInput label="Lage/Objekt" value={a.details} onChange={(v)=>setField("details",v)}/>
+                </div>
+              </Section>)}
+
+              {a.category==="Rettungsdienst"&&(<Section title="Rettungsdienst" hint="Unterstichwort & Zustand">
+                <div className="grid3">
+                  <Select label="RD-Unterstichwort" value={a.rdSub} onChange={(v)=>setField("rdSub",v)}
+                          options={["",...RD_SUBS]} invalid={!!map.rdSub} help={map.rdSub?.msg}/>
+                  <Select label="Bewusstlos?" value={a.unconscious} onChange={(v)=>setField("unconscious",v)} options={["unbekannt","ja","nein"]}/>
+                  <Select label="Atmung vorhanden?" value={a.breathing} onChange={(v)=>setField("breathing",v)} options={["unbekannt","ja","nein"]}/>
+                </div>
+                <div className="grid2 mt-2">
+                  <NumberInput label="Betroffene/Verletzte" value={a.personsInDanger} onChange={(v)=>setField("personsInDanger",v)}
+                               invalid={!!map.personsInDanger} help={map.personsInDanger?.msg}/>
+                  <LabeledInput label="Details" value={a.details} onChange={(v)=>setField("details",v)}/>
+                </div>
+              </Section>)}
+
+              {/* Sonderlagen */}
+              <details className="subcard mb-3" open>
+                <summary className="subhead">Sonderlagen <span className="k-pill">optional</span></summary>
+                <div className="grid2">
+                  <label className="inline-flex items-center gap-2">
+                    <input type="checkbox" className="w-4 h-4" checked={a.manvActive} onChange={(e)=>setField("manvActive",e.target.checked)}/>
+                    <span>MANV zuschalten</span>
+                  </label>
+                  <label className="inline-flex items-center gap-2">
+                    <input type="checkbox" className="w-4 h-4" checked={a.manvAuto} onChange={(e)=>setField("manvAuto",e.target.checked)} disabled={!a.manvActive}/>
+                    <span>MANV automatisch nach Personen</span>
+                  </label>
+                </div>
+                <div className="grid3 mt-2">
+                  <LabeledInput label="Berechnetes MANV-Level (Info)" value={a.manvActive?(a.manvAuto?(manvFromPersons(a.personsInDanger)||"—"):"— (manuell)"):"—"} onChange={()=>{}} type="text"/>
+                  <Select label="MANV-Level (manuell)" value={a.manvLevel} onChange={(v)=>setField("manvLevel",v)} options={["","MANV-1","MANV-2","MANV-3","RDAZ-1"]} invalid={!!map.manvLevel} help={map.manvLevel?.msg}/>
+                  <NumberInput label="(Tipp) Personen gesamt" value={a.personsInDanger} onChange={(v)=>setField("personsInDanger",v)} invalid={!!map.personsInDanger} help={map.personsInDanger?.msg}/>
+                </div>
+                <div className="divider"></div>
+                <div className="grid3">
+                  <label className="inline-flex items-center gap-2">
+                    <input type="checkbox" className="w-4 h-4" checked={a.rdazActive} onChange={(e)=>setField("rdazActive",e.target.checked)}/>
+                    <span>RD-Ausnahmezustand (RDAZ-1)</span>
+                  </label>
+                  <label className="inline-flex items-center gap-2">
+                    <input type="checkbox" className="w-4 h-4" checked={a.altlActive} onChange={(e)=>setField("altlActive",e.target.checked)}/>
+                    <span>Amok/Terror (AL/TL)</span>
+                  </label>
+                </div>
+                <div className="divider"></div>
+                <div className="grid3">
+                  <label className="inline-flex items-center gap-2">
+                    <input type="checkbox" className="w-4 h-4" checked={a.cbrnActive} onChange={(e)=>setField("cbrnActive",e.target.checked)}/>
+                    <span>CBRN-/Gefahrstoff-Lage (Info)</span>
+                  </label>
+                  <label className="inline-flex items-center gap-2">
+                    <input type="checkbox" className="w-4 h-4" checked={a.evacuationActive} onChange={(e)=>setField("evacuationActive",e.target.checked)}/>
+                    <span>Evakuierung (Info)</span>
+                  </label>
+                </div>
+                <div className="hint-sm mt-2">Hinweis: MANV, RDAZ-1 und AL/TL werden mit Stichwort und Fahrzeugen kombiniert. CBRN & Evakuierung sind Hinweis-Flags.</div>
+              </details>
+
+              {/* Einsatzort & Melder */}
+              <Section title="Einsatzort & Melder" hint="Pflichtfelder rot markiert">
+                <div className="grid2">
+                  <LabeledInput label={<span className="req">Adresse/PLZ</span>} value={a.location} onChange={(v)=>setField("location",v)}
+                                invalid={!!map.location} help={map.location?.msg}/>
+                  <LabeledInput label="Rückrufnummer" value={a.callbackNumber} onChange={(v)=>setField("callbackNumber",v)}
+                                invalid={!!map.callbackNumber} help={map.callbackNumber?.msg}/>
+                </div>
+                <div className="grid2">
+                  <LabeledInput label="Melder-Name" value={a.callerName} onChange={(v)=>setField("callerName",v)}/>
+                  <LabeledInput label="Hinweise (optional)" value={a.details} onChange={(v)=>setField("details",v)}/>
+                </div>
+              </Section>
+
+              {/* AAO-Erhöhung */}
+              <Section title="AAO-Erhöhung (Zusatzkräfte)" hint="Optional – Zähler je Ressource">
+                <div className="hint-sm mb-2">„+“/„−“ klicken. Mit „Erhöhung zurücksetzen“ leerst du alle Zähler.</div>
+                <div className="divider"></div>
+                {AAO_ERHOEHUNG_GROUPS.map(group=>(
+                  <div key={group.title} className="mb-3">
+                    <div className="text-xs font-semibold text-slate-300 mb-1">{group.title}</div>
+                    <div className="flex flex-wrap gap-2">
+                      {group.items.map(({key,label})=>(
+                        <div key={key} className="qty">
+                          <button type="button" onClick={()=>incMinus(key)} aria-label={`- ${label}`}>−</button>
+                          <span className="text-sm min-w-[1.5rem] text-center">{incCounts[key]||0}</span>
+                          <button type="button" onClick={()=>incPlus(key)} aria-label={`+ ${label}`}>+</button>
+                          <span className="text-sm ml-1">{label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                <div className="mt-2"><button type="button" className="btn" onClick={()=>incReset()}>Erhöhung zurücksetzen</button></div>
+              </Section>
+            </section>
+
+            {/* Ergebnis */}
+            <section className="lg:col-span-1 card p-4">
+              <h2 className="font-semibold mb-3">Ergebnis</h2>
+
+              <Row label="Stichwort" value={displayStichwort}>
+                <button className="btn text-xs" onClick={()=>copy(displayStichwort)}>Kopieren</button>
+              </Row>
+
+              <Row label="Fahrzeuge" value={buildVehiclesWithIncrease(combineVehiclesMulti(entry?.Fahrzeuge_AAO, extraEntries), incCounts)}>
+                <button className="btn text-xs" onClick={()=>copy(buildVehiclesWithIncrease(combineVehiclesMulti(entry?.Fahrzeuge_AAO, extraEntries), incCounts))}>Kopieren</button>
+              </Row>
+
+              <Row label="Info" value={(entry?.Info)||"(keine)"} multiline/>
+              {extraEntries.length>0&&(
+                <div className="mt-2 text-xs text-sky-300">
+                  Zusatzlage aktiv: {extraEntries.map(e=>e.Stichwort).join(" + ")} – in Stichwort, Fahrzeugen & Mail enthalten.
+                </div>
+              )}
+              {infoFlags.length>0&&(
+                <div className="mt-2 text-xs text-slate-300">
+                  Hinweise: {infoFlags.join(", ")}
+                </div>
+              )}
+
+              <div className="border-t border-slate-700 my-3"/>
+              <h3 className="font-medium mb-1 flex items-center justify-between">
+                <span>Alarmtext (Melder) <span className="text-xs text-slate-400">({(alarm||"").length}/160)</span></span>
+                <button className="btn text-xs" onClick={()=>copy(alarm)}>Kopieren</button>
+              </h3>
+              <textarea className="w-full rounded-2xl p-2 text-sm" rows="4" readOnly value={alarm}/>
+
+              <div className="border-t border-slate-700 my-3"/>
+              <h3 className="font-medium mb-1 flex items-center justify-between">
+                <span>Mailer</span>
+                <div className="flex gap-2">
+                  <a href={mail.mailto} className="btn bg-blue-600 text-white text-xs">In E-Mail öffnen</a>
+                  <button className="btn text-xs" onClick={()=>copy(mail.body)}>Kopieren</button>
+                </div>
+              </h3>
+              <textarea className="w-full rounded-2xl p-2 text-sm" rows="10" readOnly value={mail.body}/>
+            </section>
+          </div>
         </div>
-      </div></div>);
+      </div>);
     }
 
     const root=ReactDOM.createRoot(document.getElementById("root"));
     root.render(<App/>);
+
+    // Hilfsfunktion nach Definition (wegen Gebrauch in buildMail):
+    function buildVehiclesWithIncrease(base,counts){
+      const incList=increaseListFromCounts(counts);
+      const inc=incList.length?" + "+incList.join(", "):"";
+      return (base||"(offen)")+inc;
+    }
   </script>
 </body>
 </html>
