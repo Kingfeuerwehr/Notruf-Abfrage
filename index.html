@@ -13,7 +13,7 @@
   <script>tailwind.config = { darkMode: 'class' };</script>
 
   <style>
-    /* globale Dark-Umgebung (Form-Controls etc.) */
+    /* globale Dark-Umgebung */
     :root { color-scheme: dark; }
 
     /* Basis */
@@ -27,7 +27,7 @@
     .invalid{ border-color:#ef4444 !important; box-shadow:0 0 0 1px rgba(239,68,68,.25) }
     textarea, input{ background:#0b0b0b; border-color:#334155; color:#e5e7eb }
 
-    /* ====== Schwarzes Dropdown (Custom Select) ====== */
+    /* Schwarzes Dropdown (Custom Select) */
     .ds-wrap { position: relative; }
     .ds-btn  { width:100%; border:1px solid #334155; border-radius:.75rem; padding:.5rem .75rem; background:#0b0b0b; color:#e5e7eb; text-align:left; }
     .ds-btn.invalid{ box-shadow:0 0 0 1px rgba(239,68,68,.25); border-color:#ef4444; }
@@ -40,13 +40,6 @@
   </style>
 </head>
 <body class="min-h-screen">
-
-  <!-- Logo (falls vorhanden) -->
-  <div class="fixed top-3 right-3 z-40 pointer-events-none select-none">
-    <!-- Passe den Pfad an oder entferne das img -->
-    <!-- <img src="assets/ILS_Logo.png" alt="Logo" class="h-14 w-auto drop-shadow brightness-110" /> -->
-  </div>
-
   <div id="root"></div>
 
   <script type="text/babel">
@@ -88,14 +81,14 @@
       { Stichwort: "Messen 2", Fahrzeuge_AAO: "GW-Mess, ELW 1", Info: "Messtrupp erweitert" },
       { Stichwort: "Dekon-P", Fahrzeuge_AAO: "Dekon-P, HLF", Info: "Dekontamination Personen" },
 
-      // THW
-      { Stichwort: "THW - Beleuchtung", Fahrzeuge_AAO: "THW: MzKW/GKW, Anh. Licht", Info: "Einsatzbeleuchtung" },
-      { Stichwort: "THW - Pumpen", Fahrzeuge_AAO: "THW: MzKW/GKW, Hochwasserpumpe", Info: "Wasser fördern" },
-      { Stichwort: "THW - Räumen", Fahrzeuge_AAO: "THW: Radlader/Bagger, MzKW", Info: "Räumen/Abstützen" },
-      { Stichwort: "THW - Eigensicherung", Fahrzeuge_AAO: "THW: GKW, EGS", Info: "Eigentumssicherung" },
-      { Stichwort: "THW - Logistik", Fahrzeuge_AAO: "THW: LKW K9, MTW OV", Info: "Logistik/Material" },
-      { Stichwort: "THW - Brücke", Fahrzeuge_AAO: "THW: Brückenbau-Trupp", Info: "Behelfsbrücke" },
-      { Stichwort: "THW - Fachberater", Fahrzeuge_AAO: "THW: FB OV", Info: "Fachberater THW" },
+      // HW (ehem. THW)
+      { Stichwort: "HW - Beleuchtung", Fahrzeuge_AAO: "HW: MzKW/GKW, Anh. Licht", Info: "Einsatzbeleuchtung" },
+      { Stichwort: "HW - Pumpen", Fahrzeuge_AAO: "HW: MzKW/GKW, Hochwasserpumpe", Info: "Wasser fördern" },
+      { Stichwort: "HW - Räumen", Fahrzeuge_AAO: "HW: Radlader/Bagger, MzKW", Info: "Räumen/Abstützen" },
+      { Stichwort: "HW - Eigensicherung", Fahrzeuge_AAO: "HW: GKW, EGS", Info: "Eigentumssicherung" },
+      { Stichwort: "HW - Logistik", Fahrzeuge_AAO: "HW: LKW K9, MTW OV", Info: "Logistik/Material" },
+      { Stichwort: "HW - Brücke", Fahrzeuge_AAO: "HW: Brückenbau-Trupp", Info: "Behelfsbrücke" },
+      { Stichwort: "HW - Fachberater", Fahrzeuge_AAO: "HW: FB OV", Info: "Fachberater HW" },
 
       // RD
       { Stichwort: "Krankentransport", Fahrzeuge_AAO: "NKTW oder RTW", Info: "Transport ohne Eile" },
@@ -123,17 +116,17 @@
 
     const AAO_ERHOEHUNG_GROUPS = [
       { title:"Lösch-/Rüstfahrzeuge", items:[ {key:"(H)LF",label:"(H)LF"}, {key:"TLF",label:"TLF"}, {key:"RW",label:"RW"}, {key:"DLK",label:"DLK"} ]},
-      { title:"Führung BF/FF", items:[ {key:"ELW 1",label:"ELW 1"}, {key:"ELW 2",label:"ELW 2"}, {key:"KdoW A-Dienst",label:"KdoW A-Dienst"}, {key:"KdoW B-Dienst",label:"KdoW B-Dienst"}, {key:"KdoW C-Dienst",label:"KdoW C-Dienst"}, {key:"UG-ÖEL",label:"UG-ÖEL"} ]},
+      { title:"Führung BF/FF", items:[ {key:"ELW 1",label:"ELW 1"}, {key:"ELW 2",label:"ELW 2"}, {key:"KdoW A-Dienst",label:"KdoW A-Dienst"}, {key:"KdoW B-Dienst",label:"KdoW B-Dienst"}, {key:"KdoW C-Dienst",label:"KdoW C-Dienst"}, {key:"IuK",label:"IuK"} ]},
       { title:"Rettungsdienst & Führung RD", items:[ {key:"RTW",label:"RTW"}, {key:"NEF",label:"NEF"}, {key:"NKTW",label:"NKTW"}, {key:"ORGL",label:"ORGL (OrgL RD)"}, {key:"LNA",label:"LNA"}, {key:"ELRD",label:"ELRD"}, {key:"ÄLRD",label:"ÄLRD"}, {key:"UG-Rett",label:"UG-Rett"} ]},
       { title:"Wasser / Gefahrgut / Messen / Dekon", items:[ {key:"GW-G",label:"GW-G"}, {key:"GW-W",label:"GW-W"}, {key:"GW-Mess",label:"GW-Mess"}, {key:"Dekon-P",label:"Dekon-P"} ]},
-      { title:"THW", items:[ {key:"THW GKW/MzKW",label:"THW GKW/MzKW"}, {key:"THW Anh. Licht",label:"THW Anh. Licht"}, {key:"THW Hochwasserpumpe",label:"THW Hochwasserpumpe"}, {key:"THW Räumen (Bagger/Radlader)",label:"THW Räumen"}, {key:"THW Logistik (LKW/MTW OV)",label:"THW Logistik"}, {key:"THW Brückenbau",label:"THW Brückenbau"}, {key:"THW Fachberater",label:"THW Fachberater"} ]}
+      { title:"HW", items:[ {key:"HW GKW/MzKW",label:"HW GKW/MzKW"}, {key:"HW Anh. Licht",label:"HW Anh. Licht"}, {key:"HW Hochwasserpumpe",label:"HW Hochwasserpumpe"}, {key:"HW Räumen (Bagger/Radlader)",label:"HW Räumen"}, {key:"HW Logistik (LKW/MTW OV)",label:"HW Logistik"}, {key:"HW Brückenbau",label:"HW Brückenbau"}, {key:"HW Fachberater",label:"HW Fachberater"} ]}
     ];
 
     const RD_SUBS = ["Krankentransport","Notfall 1","Hilflose Person","Trauma","Notfall 2","Reanimation","Polytrauma"];
     const TH_LIST  = AAO.filter(e => e.Stichwort.startsWith("TH - ")).map(e => e.Stichwort);
     const ABC_LIST = AAO.filter(e => e.Stichwort.startsWith("ABC")).map(e => e.Stichwort).concat(["Messen 1","Messen 2","Dekon-P"]);
     const BMA_LIST = ["BMA","BMA - Industrie","Heimrauchmelder","CO-Melder"];
-    const THW_LIST = AAO.filter(e => e.Stichwort.startsWith("THW - ")).map(e => e.Stichwort);
+    const HW_LIST  = AAO.filter(e => e.Stichwort.startsWith("HW - ")).map(e => e.Stichwort);
 
     /* =================== Utils & Validierung =================== */
     const num = (v)=> typeof v === "number" ? v : (v === "" ? 0 : Number(v));
@@ -174,7 +167,7 @@
       if (a.category === "BMA") return byKey(a.bmaType || "BMA");
       if (a.category === "Technische Hilfe") return byKey(a.thType);
       if (a.category === "ABC") return byKey(a.abcType);
-      if (a.category === "THW") return byKey(a.thwType);
+      if (a.category === "HW") return byKey(a.thwType);   // <- ehem. THW
       if (a.category === "Rettungsdienst") {
         if (a.rdSub && byKey(a.rdSub)) return byKey(a.rdSub);
         const d = (a.details||"").toLowerCase();
@@ -190,9 +183,7 @@
     }
 
     function increaseListFromCounts(counts){
-      return Object.entries(counts)
-        .filter(([,n]) => n > 0)
-        .map(([k,n]) => `+${n} ${k}`);
+      return Object.entries(counts).filter(([,n]) => n > 0).map(([k,n]) => `+${n} ${k}`);
     }
     function buildVehiclesWithIncrease(base, counts){
       const incList = increaseListFromCounts(counts);
@@ -222,7 +213,7 @@
         `TH-Stichwort: ${a.thType || "(k.A.)"}`,
         `BMA-Typ: ${a.bmaType || "(k.A.)"}`,
         `ABC-Typ: ${a.abcType || "(k.A.)"}`,
-        `THW-Typ: ${a.thwType || "(k.A.)"}`,
+        `HW-Typ: ${a.thwType || "(k.A.)"}`,   // <- ehem. THW
         `RD-Unterstichwort: ${a.rdSub || "(k.A.)"}`,
         ...(brandExtraLines.length ? ["—", ...brandExtraLines] : []),
         ...(increaseLines.length ? ["—", ...increaseLines] : []),
@@ -256,8 +247,8 @@
         case "ABC":
           if (!a.abcType) errors.push({key:"abcType", msg:"ABC-Stichwort auswählen.", block:true});
           break;
-        case "THW":
-          if (!a.thwType) errors.push({key:"thwType", msg:"THW-Auftrag auswählen.", block:true});
+        case "HW":
+          if (!a.thwType) errors.push({key:"thwType", msg:"HW-Auftrag auswählen.", block:true});
           break;
         case "Rettungsdienst":
           if (!a.rdSub && !(a.details && a.details.trim().length>2))
@@ -297,7 +288,7 @@
       </label>
     );
 
-    // ***** SCHWARZES DROPDOWN (Custom Select) *****
+    // Schwarzes Dropdown (Custom Select)
     const Select = ({label, value, options, onChange, invalid=false, help=""}) => {
       const [open, setOpen] = React.useState(false);
       const btnRef = React.useRef(null);
@@ -307,7 +298,6 @@
 
       useEffect(() => {
         function onDocClick(e){
-          if (!menuRef.current && !btnRef.current) return;
           if (btnRef.current?.contains(e.target) || menuRef.current?.contains(e.target)) return;
           setOpen(false);
         }
@@ -400,7 +390,7 @@
         thType: "",
         bmaType: "",
         abcType: "",
-        thwType: "",
+        thwType: "",       // Feldname bleibt für HW-Auftrag
         rdSub: "",
         details: "",
         callerName: "",
@@ -442,7 +432,7 @@
         if (a.category === "Technische Hilfe" && a.thType) parts.push(`TH:${a.thType}`);
         if (a.category === "BMA" && a.bmaType) parts.push(`BMA:${a.bmaType}`);
         if (a.category === "ABC" && a.abcType) parts.push(`ABC:${a.abcType}`);
-        if (a.category === "THW" && a.thwType) parts.push(`THW:${a.thwType}`);
+        if (a.category === "HW" && a.thwType) parts.push(`HW:${a.thwType}`);   // <- ehem. THW
         if (a.category === "Rettungsdienst") {
           if (a.rdSub) parts.push(`RD:${a.rdSub}`);
           if (a.unconscious !== "unbekannt") parts.push(`Bew:${a.unconscious}`);
@@ -492,7 +482,9 @@
                 </div>
                 <LabeledInput label="Adresse/PLZ" value={a.location} onChange={(v)=>setField("location", v)} invalid={!!map.location} help={map.location?.msg}/>
 
-                <Select label="Kategorie" value={a.category} onChange={(v)=>setField("category", v)} options={["", "Brand", "BMA", "Technische Hilfe", "ABC", "THW", "Rettungsdienst", "MANV/Sonderlage"]} invalid={!!map.category} help={map.category?.msg}/>
+                <Select label="Kategorie" value={a.category} onChange={(v)=>setField("category", v)}
+                        options={["", "Brand", "BMA", "Technische Hilfe", "ABC", "HW", "Rettungsdienst", "MANV/Sonderlage"]}
+                        invalid={!!map.category} help={map.category?.msg}/>
 
                 {/* Brand */}
                 {a.category === "Brand" && (
@@ -552,10 +544,10 @@
                   </div>
                 )}
 
-                {/* THW */}
-                {a.category === "THW" && (
+                {/* HW (ehem. THW) */}
+                {a.category === "HW" && (
                   <div className="grid md:grid-cols-3 gap-2">
-                    <Select label="THW-Auftrag" value={a.thwType} onChange={(v)=>setField("thwType", v)} options={["", ...THW_LIST]} invalid={!!map.thwType} help={map.thwType?.msg}/>
+                    <Select label="HW-Auftrag" value={a.thwType} onChange={(v)=>setField("thwType", v)} options={["", ...HW_LIST]} invalid={!!map.thwType} help={map.thwType?.msg}/>
                     <NumberInput label="Betroffene (optional)" value={a.personsInDanger} onChange={(v)=>setField("personsInDanger", v)} invalid={!!map.personsInDanger} help={map.personsInDanger?.msg}/>
                     <LabeledInput label="Lage/Objekt" value={a.details} onChange={(v)=>setField("details", v)} />
                   </div>
